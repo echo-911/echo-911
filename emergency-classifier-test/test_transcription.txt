@@ -1,0 +1,6 @@
+911 Operator: 911, what's your emergency?
+Caller: There's a house fire at 456 Oak Street! The flames are coming out of the windows on the second floor!
+911 Operator: Is anyone inside the house?
+Caller: I don't know, I think the family might still be inside. I can hear someone screaming for help!
+911 Operator: We're sending fire department and paramedics immediately. Are you in a safe location?
+Caller: Yes, I'm across the street. But please hurry, the fire is spreading fast!

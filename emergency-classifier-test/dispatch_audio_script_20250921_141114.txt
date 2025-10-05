@@ -1,0 +1,51 @@
+EMERGENCY DISPATCH - HOUSE FIRE AT 456 OAK STREET
+==================================================
+
+EMERGENCY DISPATCH AUDIO SCRIPT
+Location: 456 Oak Street
+Incident Type: structure_fire
+Severity: 5/5
+
+=== INITIAL DISPATCH ===
+Dispatch transmission for all responding units:
+
+"Attention all units, Structure Fire response. Priority 1, Mass Casualty Incident. Report of a working house fire at 456 Oak Street, cross street Maple Avenue. Flames visible from second floor windows. Potential victims trapped inside. Screaming heard from within the structure. Exercise extreme caution.
+
+Engine 8, you'll be the NFIC (New Fire Incident Commander) on arrival. Stage for offensive fire attack and primary search operations. ETA 0.4 minutes.  
+
+Engine 15, responding, stage and establish backup water supply. ETA 1 minute.
+
+Medic 12, responding. Stage and prepare Triage/Treatment Area. ETA 2.1 minutes.  
+
+Unit 23, Officer Johnson, you have the initial Command role until relieved. Establish Incident Command and Scene Control. On-scene now.
+
+Unit 47, Officer Smith, respond emergency traffic for perimeter control and evacuations. ETA 4.8 minutes.
+
+Medic 5, stage and join Triage/Treatment team. ETA 5.1 minutes.
+
+All other units switch to TAC 2. Use defensive operations and maintain safety distances due to potential collapse. Report PAR (Personnel Accountability Report) to Command on arrival."
+
+=== UNIT ACKNOWLEDGMENTS ===
+Unit 23 received, ETA 0.0 minutes, en route for traffic control
+Engine 8 acknowledging, ETA 0.4 minutes, responding Code 3
+Engine 15 acknowledging, ETA 1.0 minutes, responding Code 3
+Medic 12 copy, ETA 2.1 minutes, staging for medical support
+Unit 47 received, ETA 4.8 minutes, en route for traffic control
+Medic 5 copy, ETA 5.1 minutes, staging for medical support
+
+=== ARRIVAL UPDATE (2 minutes later) ===
+Update all units: First responder on scene at 456 Oak Street. 
+        Initial assessment in progress. Standby for scene report.
+
+=== PROGRESS UPDATE (8 minutes later) ===
+Progress update 456 Oak Street: Fire attack initiated, search and rescue in progress. 
+            Two victims evacuated, being treated by EMS. Fire contained to second floor. 
+            No additional resources needed at this time.
+
+=== COMPLETION UPDATE (25 minutes later) ===
+All units 456 Oak Street: Incident under control. Fire extinguished, 
+        all occupants accounted for. Two transported to hospital with smoke inhalation. 
+        Scene being turned over to fire marshal for investigation. 
+        Units clear to return to service except Engine 8 remaining for overhaul.
+
+=== END OF INCIDENT ===
