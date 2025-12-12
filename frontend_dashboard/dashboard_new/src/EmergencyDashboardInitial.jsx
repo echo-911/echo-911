@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { GoogleMap, LoadScript, Marker } from '@react-google-maps/api';
 import backgroundImage from './hackathon2.jpg';
+import App2 from "./App2";
+import { useNavigate } from 'react-router-dom';
 
 // Mock data for agents
 const MOCK_KEY_DETAILS = {
@@ -8,26 +10,13 @@ const MOCK_KEY_DETAILS = {
   threatLevel: 'Critical',
   eventDetails: 'Fire Emergency - Residential house fire with possible occupants trapped inside.',
 };
-const MOCK_DISPATCHER_INFO = {
-  dispatcherName1: 'Sarah Johnson',
-  dispatcherName2: 'John Nolan',
-  dispatcherName3: 'Peruna Smith',
-}; 
-const MOCK_CHECKLIST_INFO = [
-  { task: 'Fire engine dispatched', status: 'Complete', time: '1 min' },
-  { task: 'Scene secured and perimeter established', status: 'In Progress', time: '3 min' },
-  { task: 'Occupants evacuated', status: 'Pending', time: '-- min' },
-  { task: 'Fire suppression started', status: 'Pending', time: '-- min' },
-  { task: 'Medical assessment of casualties', status: 'Pending', time: '-- min' },
-];
-
-
 
 const MOCK_ADDITIONAL_INFO = [
-  { detail: 'Patient has history of cardiac issues.', time: '0 min' },
-  { detail: 'Nearest hospital (St. Mary\'s) is 3 blocks away.', time: '4 min' },
-  { detail: 'Weather: Clear, no traffic incidents reported.', time: '0 min' },
+  { detail: 'Caller reports visible flames from the second floor windows.', time: '0 min' },
+  { detail: 'Possible occupants trapped inside, screaming heard.', time: '0 min' },
+  { detail: 'Nearest fire station is 2 miles away (~5 min response).', time: '2 min' },
 ];
+
 
 const EmergencyDashboard = () => {
   const [transcript, setTranscript] = useState([]);
@@ -35,34 +24,9 @@ const EmergencyDashboard = () => {
   const [currentAddress, setCurrentAddress] = useState('6425 Boaz Lane, Dallas, TX 75205');
   const [mapError, setMapError] = useState(null);
   const [isLoadingLocation, setIsLoadingLocation] = useState(true);
+  const navigate = useNavigate();
 
-  const GOOGLE_MAPS_API_KEY = "AIzaSyAp6NOaRzdIxcWCCKNRgH2qOSgNTkohMSI";
-
-  const [jsonData, setJsonData] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  useEffect(() => {
-    const fetchLatestJsonFromApi = async () => {
-      try {
-        setLoading(true);
-        const response = await fetch('http://localhost:4000/api/latest-json');
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        const data = await response.json();
-        setJsonData(data);
-        setError(null);
-      } catch (err) {
-        setError('Error fetching data from API: ' + err.message);
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchLatestJsonFromApi();
-  }, []);
+  const GOOGLE_MAPS_API_KEY = "KEY_HERE";
 
   // Function to geocode an address
   const geocodeAddress = (address) => {
@@ -103,7 +67,7 @@ const EmergencyDashboard = () => {
 
   // Load default address on component mount
   useEffect(() => {
-    const defaultAddress = '6425 Boaz Lane, Dallas, TX 75205';
+    const defaultAddress = '6425 Boaz Lane, Dallas, TX 75205'; // SMU location
     geocodeAddress(defaultAddress);
   }, []);
 
@@ -207,39 +171,31 @@ const EmergencyDashboard = () => {
         <div className="backdrop-blur-xl bg-white/8 border border-white/15 rounded-3xl p-3">
           <div className="text-center">
             <span className="text-xl font-sans font-bold text-white">
-              Hello Aaryaa, these are the additional details.
+              Hello Rhythm, here are the details of your call.                    
             </span>
+            <button
+  onClick={() => navigate('/app2')}
+  className="px-4 py-2 text-sm rounded-xl bg-white/20 text-white font-sans font-light hover:bg-white/30 backdrop-blur-md border border-white/30 transition ml-4"
+>
+  Find Dispatcher
+</button>
+
           </div>
         </div>
 
         <div className="grid grid-cols-12 gap-4">
           <div className="col-span-7 space-y-4">
             {/* Top Left - Transcript with file input */}
-            <div className="backdrop-blur-xl bg-white/6 border border-white/15 rounded-3xl p-8 h-[200px] hover:scale-[1.01] hover:bg-white/8 transition-all duration-500">
-            <div className="flex flex-col mb-6">
-  <div className="flex items-center justify-between mb-2">
-    <h3 className="text-2xl font-extralight text-white/95 tracking-wide">
-      Summary
-    </h3>
-    <span className="text-xs font-medium text-white/70 bg-white/10 px-3 py-2 rounded-full backdrop-blur-sm">
-      Post-Processing
-    </span>
-  </div>
-
-  {/* Summary paragraph */}
-  <p className="text-white/70 text-sm leading-relaxed">
-    A residential house fire has been reported at 6425 Boaz Lane, Dallas, TX. Flames are visible from the second-floor windows, and screaming indicates possible occupants trapped inside. The situation is critical. The nearest fire station is 2 miles away (~5 min response), and paramedics have been dispatched alongside the fire department. Weather conditions are clear with calm wind, minimizing fire spread risk. The caller is in a safe location across the street.
-  </p>
-</div>
-
-              <div className="mb-4">
-                <input
-                  type="file"
-                  onChange={handleFileChange}
-                  className="text-white/70 text-xs font-light bg-white/10 rounded-lg px-3 py-2 border border-white/20"
-                  accept=".txt"
-                />
+            <div className="backdrop-blur-xl bg-white/6 border border-white/15 rounded-3xl p-8 h-[400px] hover:scale-[1.01] hover:bg-white/8 transition-all duration-500">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-2xl font-extralight text-white/95 tracking-wide">
+                  Live Transcript
+                </h3>
+                <span className="text-xs font-medium text-white/70 bg-white/10 px-3 py-2 rounded-full backdrop-blur-sm">
+                  Real-time
+                </span>
               </div>
+             
               <div className="text-white/85 text-sm font-light leading-relaxed space-y-4 h-[250px] overflow-y-auto">
                 {transcript.length > 0 ? (
                   transcript.map((item, index) => (
@@ -253,66 +209,50 @@ const EmergencyDashboard = () => {
                   ))
                 ) : (
                   <div className="flex items-center space-x-2 px-4 py-2">
+                    <div className="w-2 h-2 bg-red-400 rounded-full animate-pulse"></div>
+                    <span className="text-white/60 text-xs font-light italic"></span>
+                    <div className="text-white/60 text-xs font-light italic space-y-2">
+    <p>Situation:</p>
+    <p><strong>911 Operator:</strong> 911, what's your emergency?</p>
+    <p><strong>Caller:</strong> There's a house fire at 456 Oak Street! The flames are coming out of the windows on the second floor!</p>
+    <p><strong>911 Operator:</strong> Is anyone inside the house?</p>
+    <p><strong>Caller:</strong> I don't know, I think the family might still be inside. I can hear someone screaming for help!</p>
+    <p><strong>911 Operator:</strong> We're sending fire department and paramedics immediately. Are you in a safe location?</p>
+    <p><strong>Caller:</strong> Yes, I'm across the street. But please hurry, the fire is spreading fast!</p>
+  </div>
                   </div>
                 )}
               </div>
             </div>
 
-            {/* Bottom Middle - Key Details */}
-            <div className="backdrop-blur-xl bg-white/6 border border-white/15 rounded-3xl p-6 h-[auto] hover:scale-[1.01] transition-all duration-300">
-  <h4 className="text-xl font-extralight text-white/95 tracking-wide mb-4">Key Information</h4>
-  
-  <div className="grid grid-cols-3 gap-3 text-center mb-4">
-    <div className="bg-white/5 rounded-2xl w-[180px] h-[110px] flex flex-col items-center justify-center mx-auto backdrop-blur-sm">
-      <div className="text-xl font-thin text-indigo-300">{MOCK_KEY_DETAILS.sentiment}</div>
-      <div className="text-xs font-light text-white/70 mt-1">Sentiment</div>
-    </div>
-    <div className="bg-white/5 rounded-2xl w-[180px] h-[110px] flex flex-col items-center justify-center mx-auto backdrop-blur-sm">
-      <div className="text-xl font-thin text-red-300">{MOCK_KEY_DETAILS.threatLevel}</div>
-      <div className="text-xs font-light text-white/70 mt-1">Threat Level</div>
-    </div>
-    <div className="bg-white/5 rounded-2xl w-[180px] h-[110px] flex flex-col items-center justify-center mx-auto backdrop-blur-sm">
-      <div className="text-sm font-thin text-cyan-300 text-center px-2">{MOCK_KEY_DETAILS.eventDetails}</div>
-      <div className="text-xs font-light text-white/70 mt-1"></div>
-    </div>
-  </div>
-
-  {/* Paragraph summarizing key area information */}
-  <p className="text-white/70 text-sm leading-relaxed">
-    {`The caller reports visible flames from the second-floor windows and possible occupants trapped inside. The nearest fire station is approximately 2 miles away (~5 min response), and paramedics have been dispatched alongside the fire department. Weather conditions are clear with calm wind, minimizing fire spread risk.`}
-  </p>
-</div>
-
-
+            {/* Bottom Left - Key Details */}
             <div className="backdrop-blur-xl bg-white/6 border border-white/15 rounded-3xl p-6 h-[205px] hover:scale-[1.01] transition-all duration-300">
-              <h4 className="text-xl font-extralight text-white/95 tracking-wide mb-4">Dispatchers</h4>
+              <h4 className="text-xl font-extralight text-white/95 tracking-wide mb-4">Key Information</h4>
               <div className="grid grid-cols-3 gap-3 text-center">
                 <div className="bg-white/5 rounded-2xl w-[180px] h-[110px] flex flex-col items-center justify-center mx-auto backdrop-blur-sm">
-                  <div className="text-xl font-thin text-indigo-300">{MOCK_DISPATCHER_INFO.dispatcherName1}</div>
-                  <div className="text-xs font-light text-white/70 mt-1">Firefighter</div>
+                  <div className="text-xl font-thin text-indigo-300">{MOCK_KEY_DETAILS.sentiment}</div>
+                  <div className="text-xs font-light text-white/70 mt-1">Sentiment</div>
                 </div>
                 <div className="bg-white/5 rounded-2xl w-[180px] h-[110px] flex flex-col items-center justify-center mx-auto backdrop-blur-sm">
-                  <div className="text-xl font-thin text-red-300">{MOCK_DISPATCHER_INFO.dispatcherName2}</div>
-                  <div className="text-xs font-light text-white/70 mt-1">Firefighter</div>
+                  <div className="text-xl font-thin text-red-300">{MOCK_KEY_DETAILS.threatLevel}</div>
+                  <div className="text-xs font-light text-white/70 mt-1">Threat Level</div>
                 </div>
                 <div className="bg-white/5 rounded-2xl w-[180px] h-[110px] flex flex-col items-center justify-center mx-auto backdrop-blur-sm">
-                  <div className="text-sm font-thin text-cyan-300 text-center px-2">{MOCK_DISPATCHER_INFO.dispatcherName3}</div>
-                  <div className="text-xs font-light text-white/70 mt-1">EMT</div>
+                  <div className="text-sm font-thin text-cyan-300 text-center px-2">{MOCK_KEY_DETAILS.eventDetails}</div>
+                  <div className="text-xs font-light text-white/70 mt-1">Event Details</div>
                 </div>
               </div>
             </div>
           </div>
 
-          
-
           <div className="col-span-5 space-y-6">
             {/* Top Right - Map */}
-            <div className="backdrop-blur-xl bg-white/6 border border-white/15 rounded-3xl p-3 h-100px] hover:scale-[1.02] transition-all duration-300">
+            <div className="backdrop-blur-xl bg-white/6 border border-white/15 rounded-3xl p-6 h-[300px] hover:scale-[1.02] transition-all duration-300">
               <div className="flex items-center justify-between mb-4">
                 <h4 className="text-lg font-light text-white/95 tracking-wide">Caller's Location</h4>
                 <div className="w-3 h-3 bg-emerald-400 rounded-full animate-pulse shadow-lg shadow-emerald-400/30"></div>
               </div>
-              <div className="h-[125px] relative">
+              <div className="h-[220px] relative">
                 {mapError ? (
                   <div className="w-full h-full bg-red-900/20 rounded-3xl flex items-center justify-center border border-red-400/20">
                     <div className="text-center">
@@ -352,16 +292,17 @@ const EmergencyDashboard = () => {
             </div>
 
             {/* Bottom Right - Additional Information */}
-            <div className="backdrop-blur-xl bg-white/6 border border-white/15 rounded-3xl p-6 h-[500px] hover:scale-[1.02] transition-all duration-300">
-              <h4 className="text-lg font-light text-white/95 tracking-wide mb-4">CheckList</h4>
+            <div className="backdrop-blur-xl bg-white/6 border border-white/15 rounded-3xl p-6 h-[295px] hover:scale-[1.02] transition-all duration-300">
+              <h4 className="text-lg font-light text-white/95 tracking-wide mb-4">Additional Information</h4>
               <div className="space-y-3">
-    {MOCK_CHECKLIST_INFO.map((item, index) => (
-        <div key={index} className="flex justify-between items-center bg-white/5 rounded-xl p-4 backdrop-blur-sm hover:bg-white/10 transition-colors">
-            <span className="text-white/85 font-light text-sm">{item.task}</span>
-            <span className="text-cyan-300 font-bold text-sm">{item.status} - {item.time}</span>
-        </div>
-    ))}
-</div>
+                {MOCK_ADDITIONAL_INFO.map((item, index) => (
+                  <div key={index} className="flex justify-between items-center bg-white/5 rounded-xl p-4 backdrop-blur-sm hover:bg-white/10 transition-colors">
+                    <span className="text-white/85 font-light text-sm">{item.detail}</span>
+             
+                  </div>
+                ))}
+                
+              </div>
             </div>
           </div>
         </div>
