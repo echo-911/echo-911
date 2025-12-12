@@ -317,26 +317,23 @@ const EmergencyDashboard = () => {
             </div>
 
             {/* Bottom Right - Additional Information */}
-            <div className="backdrop-blur-xl bg-white/6 border border-white/15 rounded-3xl p-6 h-[295px] hover:scale-[1.02] transition-all duration-300">
-              <h4 className="text-lg font-light text-white/95 tracking-wide mb-4">Additional Information</h4>
-              <div className="space-y-3">
-                {(!loading && !error) 
-                  ? jsonData.call_info.AdditionalInfo.map((item, index) => (
-                    <div key={index} className="flex justify-between items-center bg-white/5 rounded-xl p-4 backdrop-blur-sm hover:bg-white/10 transition-colors">
-                      <span className="text-white/85 font-light text-sm">{item.replace(/\d+\./g, '').trim()}</span>
-              
-                    </div>
-                  ))
-                  : MOCK_ADDITIONAL_INFO.map((item, index) => (
-                    <div key={index} className="flex justify-between items-center bg-white/5 rounded-xl p-4 backdrop-blur-sm hover:bg-white/10 transition-colors">
-                      <span className="text-white/85 font-light text-sm">{item}</span>
-              
-                    </div>
-                  ))
-                }
-                
-              </div>
-            </div>
+        <div className="backdrop-blur-xl bg-white/6 border border-white/15 rounded-3xl p-6 h-[295px] hover:scale-[1.02] transition-all duration-300 flex flex-col">
+  <h4 className="text-lg font-light text-white/95 tracking-wide mb-4 flex-shrink-0">Additional Information</h4>
+  <div className="space-y-3 flex-1 overflow-y-auto">
+    {(!loading && !error) 
+      ? jsonData.call_info.AdditionalInfo.map((item, index) => (
+        <div key={index} className="flex justify-between items-start bg-white/5 rounded-xl p-4 backdrop-blur-sm hover:bg-white/10 transition-colors">
+          <span className="text-white/85 font-light text-sm break-words flex-1">{item.replace(/\d+\./g, '').trim()}</span>
+        </div>
+      ))
+      : MOCK_ADDITIONAL_INFO.map((item, index) => (
+        <div key={index} className="flex justify-between items-start bg-white/5 rounded-xl p-4 backdrop-blur-sm hover:bg-white/10 transition-colors">
+          <span className="text-white/85 font-light text-sm break-words flex-1">{item}</span>
+        </div>
+      ))
+    }
+  </div>
+</div>
           </div>
         </div>
       </div>
