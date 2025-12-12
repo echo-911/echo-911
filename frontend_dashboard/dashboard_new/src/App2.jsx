@@ -36,7 +36,7 @@ const EmergencyDashboard = () => {
   const [mapError, setMapError] = useState(null);
   const [isLoadingLocation, setIsLoadingLocation] = useState(true);
 
-  const GOOGLE_MAPS_API_KEY = "AIzaSyAp6NOaRzdIxcWCCKNRgH2qOSgNTkohMSI";
+  const GOOGLE_MAPS_API_KEY = "KEY_HERE";
 
   const [jsonData, setJsonData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -232,14 +232,7 @@ const EmergencyDashboard = () => {
   </p>
 </div>
 
-              <div className="mb-4">
-                <input
-                  type="file"
-                  onChange={handleFileChange}
-                  className="text-white/70 text-xs font-light bg-white/10 rounded-lg px-3 py-2 border border-white/20"
-                  accept=".txt"
-                />
-              </div>
+              
               <div className="text-white/85 text-sm font-light leading-relaxed space-y-4 h-[250px] overflow-y-auto">
                 {transcript.length > 0 ? (
                   transcript.map((item, index) => (
@@ -259,7 +252,7 @@ const EmergencyDashboard = () => {
             </div>
 
             {/* Bottom Middle - Key Details */}
-            <div className="backdrop-blur-xl bg-white/6 border border-white/15 rounded-3xl p-6 h-[auto] hover:scale-[1.01] transition-all duration-300">
+            <div className="border border-white/15 rounded-3xl p-6 h-[auto] hover:scale-[1.01] transition-all duration-300">
   <h4 className="text-xl font-extralight text-white/95 tracking-wide mb-4">Key Information</h4>
   
   <div className="grid grid-cols-3 gap-3 text-center mb-4">
