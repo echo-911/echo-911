@@ -68,6 +68,54 @@ app.get('/api/latest-json', async (req, res) => {
   }
 });
 
+app.get('/api/agentbucket3/emergency_agent_results', async (req, res) => {
+  try {
+    const listCommand = new ListObjectsV2Command({
+      Bucket: 'agentbucket3', // New bucket name
+      Prefix: 'emergency_agent_results/',
+    });
+    const listedObjects = await s3Client.send(listCommand);
+
+    if (!listedObjects.Contents || listedObjects.Contents.length === 0) {
+      return res.status(404).json({ error: 'No objects found in S3 bucket agentbucket3/emergency_agent_results/' });
+    }
+
+    // Find latest object
+    let latestObject = listedObjects.Contents.reduce((latest, obj) =>
+      !latest || new Date(obj.LastModified) > new Date(latest.LastModified)
+        ? obj
+        : latest,
+      null
+    );
+
+    if (!latestObject || !latestObject.Key) {
+      return res.status(404).json({ error: 'Could not determine latest object key in agentbucket3' });
+    }
+
+    const getCommand = new GetObjectCommand({
+      Bucket: 'agentbucket3',
+      Prefix: 'emergency_agent_results/',
+      Key: latestObject.Key,
+    });
+    const response = await s3Client.send(getCommand);
+
+    // Convert stream body to string
+    const bodyContents = await streamToString(response.Body);
+
+    // Parse JSON
+    const parsedJson = JSON.parse(bodyContents);
+
+    // Return JSON data to frontend
+    res.json(parsedJson);
+  } catch (error) {
+    console.error('Error fetching S3 JSON from agentbucket3/emergency_agent_results/:', error);
+    if (error.$metadata) {
+        console.log('AWS SDK Metadata:', error.$metadata);
+    }
+    res.status(500).json({ error: 'Failed to fetch data from S3 (agentbucket3/emergency_agent_results/)' });
+  }
+});
+
 app.get('/api/agentbucket-latest-json', async (req, res) => {
   try {
     const listCommand = new ListObjectsV2Command({
