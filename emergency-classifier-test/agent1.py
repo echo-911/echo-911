@@ -256,6 +256,10 @@ def run(address: str, emergency_context: bool = False, transcription_json: dict 
     if transcription_json:
         result["call_info"] = extract_call_info(transcription_json)
 
+    # save result to file
+    with open("emergency_agent_result.json", "w", encoding="utf-8") as f:
+        json.dump(result, f, indent=2)
+        
     # Upload synchronously instead of using a daemon thread
     if os.getenv("S3_BUCKET_NAME"):
         prefix = "emergency_agent_results" if emergency_context else "agent_results"
