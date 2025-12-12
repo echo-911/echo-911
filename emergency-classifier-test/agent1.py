@@ -216,10 +216,15 @@ def extract_call_info(call_json: dict) -> dict:
     # Extract one-line summary from transcript
     summary = extract_summary_from_transcript(transcript)
     additional_info = extract_additional_info_llama(transcript)
+    words = threat_level.split()
+
+    first_two_words = " ".join(words[:2])
+    remaining_words = " ".join(words[3:])
 
     return {
         "Sentiment": sentiment,
-        "ThreatLevel": threat_level,
+        "ThreatLevel": first_two_words,
+        "ThreatLevelDescription:": remaining_words,
         "Summary": summary,
         "AdditionalInfo": additional_info
     }
