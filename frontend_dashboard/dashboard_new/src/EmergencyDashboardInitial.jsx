@@ -26,7 +26,7 @@ const EmergencyDashboard = () => {
   const [isLoadingLocation, setIsLoadingLocation] = useState(true);
   const navigate = useNavigate();
 
-  const GOOGLE_MAPS_API_KEY = "KEY_HERE";
+  const GOOGLE_MAPS_API_KEY = process.env.REACT_APP_GOOGLE_MAPS_API_KEY || "KEY_HERE";
 
   const [jsonData, setJsonData] = useState(null);
   const [loading, setLoading] = useState(true);
