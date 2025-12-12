@@ -36,7 +36,7 @@ const EmergencyDashboard = () => {
   const [mapError, setMapError] = useState(null);
   const [isLoadingLocation, setIsLoadingLocation] = useState(true);
 
-  const GOOGLE_MAPS_API_KEY = "KEY_HERE";
+  const GOOGLE_MAPS_API_KEY = "AIzaSyAp6NOaRzdIxcWCCKNRgH2qOSgNTkohMSI";
 
   const [jsonData, setJsonData] = useState(null);
   const [loading, setLoading] = useState(true);
