@@ -12,9 +12,9 @@ const MOCK_KEY_DETAILS = {
 };
 
 const MOCK_ADDITIONAL_INFO = [
-  { detail: 'Caller reports visible flames from the second floor windows.', time: '0 min' },
-  { detail: 'Possible occupants trapped inside, screaming heard.', time: '0 min' },
-  { detail: 'Nearest fire station is 2 miles away (~5 min response).', time: '2 min' },
+  'Caller reports visible flames from the second floor windows.',
+  'Possible occupants trapped inside, screaming heard.',
+  'Nearest fire station is 2 miles away (~5 min response).',
 ];
 
 
@@ -27,6 +27,32 @@ const EmergencyDashboard = () => {
   const navigate = useNavigate();
 
   const GOOGLE_MAPS_API_KEY = "KEY_HERE";
+
+  const [jsonData, setJsonData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchLatestJsonFromApi = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch('http://localhost:4000/api/agentbucket3/emergency_agent_results');
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        setJsonData(data);
+        setError(null);
+      } catch (err) {
+        setError('Error fetching data from API: ' + err.message);
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchLatestJsonFromApi();
+  }, []);
 
   // Function to geocode an address
   const geocodeAddress = (address) => {
@@ -67,9 +93,9 @@ const EmergencyDashboard = () => {
 
   // Load default address on component mount
   useEffect(() => {
-    const defaultAddress = '6425 Boaz Lane, Dallas, TX 75205'; // SMU location
+    const defaultAddress = (!loading && !error) ? jsonData.address : '6425 Boaz Lane, Dallas, TX 75205'; // SMU location
     geocodeAddress(defaultAddress);
-  }, []);
+  }, [jsonData]);
 
   // Function to handle file input and parse transcript
   const handleFileChange = (event) => {
@@ -174,12 +200,11 @@ const EmergencyDashboard = () => {
               Hello Rhythm, here are the details of your call.                    
             </span>
             <button
-  onClick={() => navigate('/app2')}
-  className="px-4 py-2 text-sm rounded-xl bg-white/20 text-white font-sans font-light hover:bg-white/30 backdrop-blur-md border border-white/30 transition ml-4"
->
-  Find Dispatcher
-</button>
-
+              onClick={() => navigate('/app2')}
+              className="px-4 py-2 text-sm rounded-xl bg-white/20 text-white font-sans font-light hover:bg-white/30 backdrop-blur-md border border-white/30 transition ml-4"
+            >
+              Find Dispatcher
+            </button>
           </div>
         </div>
 
@@ -212,14 +237,14 @@ const EmergencyDashboard = () => {
                     <div className="w-2 h-2 bg-red-400 rounded-full animate-pulse"></div>
                     <span className="text-white/60 text-xs font-light italic"></span>
                     <div className="text-white/60 text-xs font-light italic space-y-2">
-    <p>Situation:</p>
-    <p><strong>911 Operator:</strong> 911, what's your emergency?</p>
-    <p><strong>Caller:</strong> There's a house fire at 456 Oak Street! The flames are coming out of the windows on the second floor!</p>
-    <p><strong>911 Operator:</strong> Is anyone inside the house?</p>
-    <p><strong>Caller:</strong> I don't know, I think the family might still be inside. I can hear someone screaming for help!</p>
-    <p><strong>911 Operator:</strong> We're sending fire department and paramedics immediately. Are you in a safe location?</p>
-    <p><strong>Caller:</strong> Yes, I'm across the street. But please hurry, the fire is spreading fast!</p>
-  </div>
+                      <p>Situation:</p>
+                      <p><strong>911 Operator:</strong> 911, what's your emergency?</p>
+                      <p><strong>Caller:</strong> There's a house fire at 456 Oak Street! The flames are coming out of the windows on the second floor!</p>
+                      <p><strong>911 Operator:</strong> Is anyone inside the house?</p>
+                      <p><strong>Caller:</strong> I don't know, I think the family might still be inside. I can hear someone screaming for help!</p>
+                      <p><strong>911 Operator:</strong> We're sending fire department and paramedics immediately. Are you in a safe location?</p>
+                      <p><strong>Caller:</strong> Yes, I'm across the street. But please hurry, the fire is spreading fast!</p>
+                    </div>
                   </div>
                 )}
               </div>
@@ -230,15 +255,15 @@ const EmergencyDashboard = () => {
               <h4 className="text-xl font-extralight text-white/95 tracking-wide mb-4">Key Information</h4>
               <div className="grid grid-cols-3 gap-3 text-center">
                 <div className="bg-white/5 rounded-2xl w-[180px] h-[110px] flex flex-col items-center justify-center mx-auto backdrop-blur-sm">
-                  <div className="text-xl font-thin text-indigo-300">{MOCK_KEY_DETAILS.sentiment}</div>
+                  <div className="text-xl font-thin text-indigo-300">{(!loading && !error) ? jsonData.call_info.Sentiment : MOCK_KEY_DETAILS.sentiment}</div>
                   <div className="text-xs font-light text-white/70 mt-1">Sentiment</div>
                 </div>
                 <div className="bg-white/5 rounded-2xl w-[180px] h-[110px] flex flex-col items-center justify-center mx-auto backdrop-blur-sm">
-                  <div className="text-xl font-thin text-red-300">{MOCK_KEY_DETAILS.threatLevel}</div>
+                  <div className="text-xl font-thin text-red-300">{(!loading && !error) ? jsonData.call_info.ThreatLevel : MOCK_KEY_DETAILS.threatLevel}</div>
                   <div className="text-xs font-light text-white/70 mt-1">Threat Level</div>
                 </div>
                 <div className="bg-white/5 rounded-2xl w-[180px] h-[110px] flex flex-col items-center justify-center mx-auto backdrop-blur-sm">
-                  <div className="text-sm font-thin text-cyan-300 text-center px-2">{MOCK_KEY_DETAILS.eventDetails}</div>
+                  <div className="text-sm font-thin text-cyan-300 text-center px-2">{(!loading && !error) ? jsonData.call_info.Summary : MOCK_KEY_DETAILS.eventDetails}</div>
                   <div className="text-xs font-light text-white/70 mt-1">Event Details</div>
                 </div>
               </div>
@@ -295,12 +320,20 @@ const EmergencyDashboard = () => {
             <div className="backdrop-blur-xl bg-white/6 border border-white/15 rounded-3xl p-6 h-[295px] hover:scale-[1.02] transition-all duration-300">
               <h4 className="text-lg font-light text-white/95 tracking-wide mb-4">Additional Information</h4>
               <div className="space-y-3">
-                {MOCK_ADDITIONAL_INFO.map((item, index) => (
-                  <div key={index} className="flex justify-between items-center bg-white/5 rounded-xl p-4 backdrop-blur-sm hover:bg-white/10 transition-colors">
-                    <span className="text-white/85 font-light text-sm">{item.detail}</span>
-             
-                  </div>
-                ))}
+                {(!loading && !error) 
+                  ? jsonData.call_info.AdditionalInfo.map((item, index) => (
+                    <div key={index} className="flex justify-between items-center bg-white/5 rounded-xl p-4 backdrop-blur-sm hover:bg-white/10 transition-colors">
+                      <span className="text-white/85 font-light text-sm">{item.replace(/\d+\./g, '').trim()}</span>
+              
+                    </div>
+                  ))
+                  : MOCK_ADDITIONAL_INFO.map((item, index) => (
+                    <div key={index} className="flex justify-between items-center bg-white/5 rounded-xl p-4 backdrop-blur-sm hover:bg-white/10 transition-colors">
+                      <span className="text-white/85 font-light text-sm">{item}</span>
+              
+                    </div>
+                  ))
+                }
                 
               </div>
             </div>
