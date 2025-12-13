@@ -16,11 +16,11 @@ ECHO-911 is an AWS-powered Operator Assistant designed to enhance emergency resp
 1. AWS Connect in order to recieve the call
 2. AWS Transcribe + Comprehend to transcribe the call 
 3. S3 storage to store the transcriptions + agent responses 
-4. External APIS: OpenStreetMap API, Open-Meteo API, and Claude Sonnet to grab weather data + build the agent 
-5. Amazon Bedrock
+4. External APIS: OpenStreetMap API and Open-Meteo APIto grab weather data
+5. Amazon Bedrock to access and run the Claude Sonnet model
 6. AWS Strands to connect the tools and agents
-7. AWS Polly
-8. AWS Lambda
+7. AWS Polly to convert the agent responses back into speech 
+8. AWS Lambda to handle the backend logic and extract key features from the call as soon as it starts
 
 ## **In Conclusion ... **
 ECHO-911 is a next-generation network assistant for 911 operators—breaking barriers, not replacing the human touch. We're so thankful to AWS, At&T, Deloitte, and SMU for giving us the opportunity to participate in this hackathon and get hands-on experience with these tools. We can't wait to see where this project goes in the future and thank you for awarding us with the 1st place prize!
