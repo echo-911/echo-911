@@ -228,7 +228,7 @@ const EmergencyDashboard = () => {
 
   {/* Summary paragraph */}
   <p className="text-white/70 text-sm leading-relaxed">
-    A residential house fire has been reported at 6425 Boaz Lane, Dallas, TX. Flames are visible from the second-floor windows, and screaming indicates possible occupants trapped inside. The situation is critical. The nearest fire station is 2 miles away (~5 min response), and paramedics have been dispatched alongside the fire department. Weather conditions are clear with calm wind, minimizing fire spread risk. The caller is in a safe location across the street.
+    {jsonData ? jsonData['incident']['incident_narrative'] : "A residential house fire has been reported at 6425 Boaz Lane, Dallas, TX. Flames are visible from the second-floor windows, and screaming indicates possible occupants trapped inside. The situation is critical. The nearest fire station is 2 miles away (~5 min response), and paramedics have been dispatched alongside the fire department. Weather conditions are clear with calm wind, minimizing fire spread risk. The caller is in a safe location across the street."}
   </p>
 </div>
 

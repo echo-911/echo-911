@@ -186,6 +186,62 @@ Return ONLY valid JSON for the object above.
     print("LLM classification:", data)
     return data
 
+def generate_incident_narrative(agent1_data: Dict,
+                               incident: Dict,
+                               assigned_responders: List[Dict]) -> str:
+    address = incident.get("location", "Unknown location")
+    incident_type = incident.get("type", "incident")
+    severity = incident.get("severity", 0)
+
+    weather = agent1_data.get("weather", {})
+    summary = agent1_data.get("call_info", {}).get("Summary", "")
+    transcript = agent1_data.get("transcript", "")
+
+    responder_info = []
+    for r in assigned_responders:
+        responder_info.append(
+            f"{r['type']} unit {r['unit']} (~{r['eta_minutes']} min)"
+        )
+
+    context = f"""
+RAW CALL SUMMARY:
+{summary}
+
+INCIDENT TYPE: {incident_type}
+SEVERITY: {severity}/5
+LOCATION: {address}
+
+RESPONDERS DISPATCHED:
+{", ".join(responder_info)}
+
+WEATHER:
+{weather}
+
+CALL TRANSCRIPT (truncated):
+{transcript[:500]}
+"""
+
+    prompt = f"""
+You are an emergency dispatch supervisor.
+
+Using the information below, write a concise but vivid
+incident narrative suitable for:
+- situation reports
+- command briefings
+- post-incident review
+
+Requirements:
+- 4–6 sentences
+- Plain professional language
+- Describe hazards, life risk, and response status
+- Do NOT speculate
+- Do NOT include JSON or formatting
+
+{context}
+"""
+
+    return call_claude(prompt, max_tokens=250)
+
 def process_incident_from_agent1(agent1_data: Dict, responders: List[Dict]) -> Dict:
     """Process agent1 output to create dispatch-ready incident data using LLM classification."""
     # 1) Ask the LLM to classify the incident
@@ -240,6 +296,12 @@ def process_incident_from_agent1(agent1_data: Dict, responders: List[Dict]) -> D
         "response_type": response_types,
         "llm_reasoning": classification.get("reasoning", ""),
     }
+    incident_narrative = generate_incident_narrative(
+        agent1_data,
+        incident,
+        assigned
+    )
+    incident["incident_narrative"] = incident_narrative
 
     return {
         "incident": incident,
