@@ -46,12 +46,12 @@ const EmergencyDashboard = () => {
     const fetchLatestJsonFromApi = async () => {
       try {
         setLoading(true);
-        const response = await fetch('http://localhost:4000/api/latest-json');
+        const response = await fetch('http://localhost:4000/api/agentbucket3/emergency_agent_results/incident_full_details');
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
-        const data = await response.json();
-        setJsonData(data);
+        const data = await response.json()
+        setJsonData(data['files'].find(file => file['key'].endsWith('complete_dispatch.json'))['body']);
         setError(null);
       } catch (err) {
         setError('Error fetching data from API: ' + err.message);
@@ -257,41 +257,35 @@ const EmergencyDashboard = () => {
   
   <div className="grid grid-cols-3 gap-3 text-center mb-4">
     <div className="bg-white/5 rounded-2xl w-[180px] h-[110px] flex flex-col items-center justify-center mx-auto backdrop-blur-sm">
-      <div className="text-xl font-thin text-indigo-300">{MOCK_KEY_DETAILS.sentiment}</div>
+      <div className="text-xl font-thin text-indigo-300">{jsonData ? jsonData['agent1_analysis']['call_info']['Sentiment'] : MOCK_KEY_DETAILS.sentiment}</div>
       <div className="text-xs font-light text-white/70 mt-1">Sentiment</div>
     </div>
     <div className="bg-white/5 rounded-2xl w-[180px] h-[110px] flex flex-col items-center justify-center mx-auto backdrop-blur-sm">
-      <div className="text-xl font-thin text-red-300">{MOCK_KEY_DETAILS.threatLevel}</div>
+      <div className="text-xl font-thin text-red-300">{jsonData ? jsonData['agent1_analysis']['call_info']['ThreatLevel'] : MOCK_KEY_DETAILS.threatLevel}</div>
       <div className="text-xs font-light text-white/70 mt-1">Threat Level</div>
     </div>
     <div className="bg-white/5 rounded-2xl w-[180px] h-[110px] flex flex-col items-center justify-center mx-auto backdrop-blur-sm">
-      <div className="text-sm font-thin text-cyan-300 text-center px-2">{MOCK_KEY_DETAILS.eventDetails}</div>
+      <div className="text-sm font-thin text-cyan-300 text-center px-2">{jsonData ? jsonData['agent1_analysis']['call_info']['Summary'] : MOCK_KEY_DETAILS.eventDetails}</div>
       <div className="text-xs font-light text-white/70 mt-1"></div>
     </div>
   </div>
 
   {/* Paragraph summarizing key area information */}
   <p className="text-white/70 text-sm leading-relaxed">
-    {`The caller reports visible flames from the second-floor windows and possible occupants trapped inside. The nearest fire station is approximately 2 miles away (~5 min response), and paramedics have been dispatched alongside the fire department. Weather conditions are clear with calm wind, minimizing fire spread risk.`}
+    {jsonData ? jsonData['dispatch_dialogue']['global_dispatch_brief'] : `The caller reports visible flames from the second-floor windows and possible occupants trapped inside. The nearest fire station is approximately 2 miles away (~5 min response), and paramedics have been dispatched alongside the fire department. Weather conditions are clear with calm wind, minimizing fire spread risk.`}
   </p>
 </div>
 
 
             <div className="backdrop-blur-xl bg-white/6 border border-white/15 rounded-3xl p-6 h-[205px] hover:scale-[1.01] transition-all duration-300">
               <h4 className="text-xl font-extralight text-white/95 tracking-wide mb-4">Dispatchers</h4>
-              <div className="grid grid-cols-3 gap-3 text-center">
-                <div className="bg-white/5 rounded-2xl w-[180px] h-[110px] flex flex-col items-center justify-center mx-auto backdrop-blur-sm">
-                  <div className="text-xl font-thin text-indigo-300">{MOCK_DISPATCHER_INFO.dispatcherName1}</div>
-                  <div className="text-xs font-light text-white/70 mt-1">Firefighter</div>
-                </div>
-                <div className="bg-white/5 rounded-2xl w-[180px] h-[110px] flex flex-col items-center justify-center mx-auto backdrop-blur-sm">
-                  <div className="text-xl font-thin text-red-300">{MOCK_DISPATCHER_INFO.dispatcherName2}</div>
-                  <div className="text-xs font-light text-white/70 mt-1">Firefighter</div>
-                </div>
-                <div className="bg-white/5 rounded-2xl w-[180px] h-[110px] flex flex-col items-center justify-center mx-auto backdrop-blur-sm">
-                  <div className="text-sm font-thin text-cyan-300 text-center px-2">{MOCK_DISPATCHER_INFO.dispatcherName3}</div>
-                  <div className="text-xs font-light text-white/70 mt-1">EMT</div>
-                </div>
+              <div className="grid grid-cols-3 gap-3 text-center overflow-y-auto max-h-[140px]">
+                {jsonData && jsonData['assigned_responders'].map((responder, index) => (
+                  <div key={index} className="bg-white/5 rounded-2xl w-[180px] h-[110px] flex flex-col items-center justify-center mx-auto backdrop-blur-sm">
+                    <div className="text-xl font-thin text-indigo-300">{responder['name']}</div>
+                    <div className="text-xs font-light text-white/70 mt-1">{responder['unit']}</div>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
