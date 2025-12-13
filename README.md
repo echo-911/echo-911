@@ -7,7 +7,7 @@ ECHO-911 is an AWS-powered Operator Assistant designed to enhance emergency resp
 
 ## 👩🏽‍💻 **Setup and Installation**
 * How to start the server: navigate to echo-backend and in the terminal run "node server.js"
-* How to start the webapp: navigate to echo-911/frontend_dashboard/dashboard_new and in the terminal run "npm run start"
+* How to start the webapp: navigate to echo-911/echo-frontend and in the terminal run "npm run start"
 * How to view the results of each individual agent: navigate to echo-911/emergency-classifier-test and run "python3 [agentName].py"
 * To install depedencies for the agents : run the command "pip install -r requirements.txt"
 
