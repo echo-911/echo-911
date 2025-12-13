@@ -51,7 +51,26 @@ const EmergencyDashboard = () => {
       }
     };
 
+    const fetchLatestTranscriptFromApi = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch('http://localhost:4000/api/latest-json');
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        setTranscript(data['TranscriptText'].split(". "));
+        setError(null);
+      } catch (err) {
+        setError('Error fetching data from API: ' + err.message);
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
     fetchLatestJsonFromApi();
+    fetchLatestTranscriptFromApi();
   }, []);
 
   // Function to geocode an address
@@ -97,6 +116,19 @@ const EmergencyDashboard = () => {
     geocodeAddress(defaultAddress);
   }, [jsonData]);
 
+  const parseTranscipt = (text) => {
+    const lines = text.split('\n').filter(line => line.trim() !== '');
+    const parsedTranscript = lines.map(line => {
+      const match = line.match(/^\[(.*?)\]: "(.*)"(?: \((.*?)\))?$/);
+      if (match) {
+        const [_, speaker, message, time] = match;
+        return { speaker, message, time };
+      }
+      return null;
+    }).filter(Boolean);
+    return parsedTranscript;
+  }
+
   // Function to handle file input and parse transcript
   const handleFileChange = (event) => {
     const file = event.target.files[0];
@@ -104,15 +136,7 @@ const EmergencyDashboard = () => {
       const reader = new FileReader();
       reader.onload = (e) => {
         const text = e.target.result;
-        const lines = text.split('\n').filter(line => line.trim() !== '');
-        const parsedTranscript = lines.map(line => {
-          const match = line.match(/^\[(.*?)\]: "(.*)"(?: \((.*?)\))?$/);
-          if (match) {
-            const [_, speaker, message, time] = match;
-            return { speaker, message, time };
-          }
-          return null;
-        }).filter(Boolean);
+        const parsedTranscript = parseTranscipt(text);
         setTranscript(parsedTranscript);
 
         // Parse location from the transcript
@@ -224,13 +248,14 @@ const EmergencyDashboard = () => {
               <div className="text-white/85 text-sm font-light leading-relaxed space-y-4 h-[250px] overflow-y-auto">
                 {transcript.length > 0 ? (
                   transcript.map((item, index) => (
-                    <div
-                      key={index}
-                      className={`backdrop-blur-sm bg-white/4 rounded-2xl p-4 border-l-4 ${item.speaker === 'Dispatcher' ? 'border-blue-300/60' : 'border-green-300/60'}`}
-                    >
-                      <p className="font-medium text-white/95">[{item.speaker}]: "{item.message}"</p>
-                      <span className="text-xs text-white/60 font-light">{item.time || 'Timestamp N/A'}</span>
-                    </div>
+                    <p className="">{item}</p>
+                    // <div
+                    //   key={index}
+                    //   className={`backdrop-blur-sm bg-white/4 rounded-2xl p-4 border-l-4 ${item.speaker === 'Dispatcher' ? 'border-blue-300/60' : 'border-green-300/60'}`}
+                    // >
+                    //   <p className="font-medium text-white/95">[{item.speaker}]: "{item.message}"</p>
+                    //   <span className="text-xs text-white/60 font-light">{item.time || 'Timestamp N/A'}</span>
+                    // </div>
                   ))
                 ) : (
                   <div className="flex items-center space-x-2 px-4 py-2">
