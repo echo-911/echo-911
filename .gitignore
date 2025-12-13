@@ -30,6 +30,11 @@ pnpm-lock.yaml
 **/coverage/
 **/.nyc_output/
 
+# Python cache files
+__pycache__/
+*.py[cod]
+*.pyc
+
 # IDEs and editors
 .vscode/
 .idea/
