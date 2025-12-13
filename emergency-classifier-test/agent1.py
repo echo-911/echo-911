@@ -2,6 +2,7 @@ import os
 import time
 import requests
 from dotenv import load_dotenv
+from pathlib import Path
 import concurrent.futures
 from functools import lru_cache
 import threading
@@ -11,7 +12,7 @@ import json
 # Strands imports
 from strands import Agent, tool
 
-load_dotenv()
+load_dotenv(dotenv_path=Path(__file__).parent.parent / '.env.local')
 
 # ---------------- Global clients ----------------
 _bedrock_client = None

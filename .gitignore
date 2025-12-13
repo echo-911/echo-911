@@ -1,0 +1,67 @@
+# Environment variables - CRITICAL FOR SECURITY
+.env
+.env.local
+.env.*.local
+.env.development
+.env.test
+.env.production
+*.env
+*.env.local
+
+# Dependencies - covers all workspace node_modules
+node_modules/
+**/node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+pnpm-lock.yaml
+.pnpm-store/
+
+# Build outputs - covers all workspace builds
+**/dist/
+**/build/
+**/out/
+**/.next/
+*.tsbuildinfo
+.turbo/
+
+# Testing
+**/coverage/
+**/.nyc_output/
+
+# IDEs and editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# OS files
+Thumbs.db
+*.log
+
+# AWS specific
+aws-config.json
+credentials.json
+*.pem
+*.key
+
+# Misc
+.cache/
+.temp/
+tmp/
+
+# Monorepo specific
+.turbo/
+.vercel/
+.changeset/
+apps/**/public/build/
+packages/**/lib/
+
+# agent outputs
+emergency-classifier-test/dispatch_dialogue_result.json
+emergency-classifier-test/emergency_agent_result.json
+emergency-classifier-test/incident_processing_result.json
+emergency-classifier-test/incident_audio/*

@@ -10,6 +10,8 @@ app.use(express.json());
 
 const REGION = 'us-west-2';
 const BUCKET = 's3-stage-1-bucket-329857347';
+const path = require('path');
+require('dotenv').config({ path: path.resolve(__dirname, '../.env.local') });
 
 // Configure AWS S3 client with credentials securely stored (e.g., env vars)
 const s3Client = new S3Client({

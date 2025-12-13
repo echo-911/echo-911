@@ -6,9 +6,10 @@ import math
 from datetime import datetime
 from typing import List, Dict, Tuple
 from dotenv import load_dotenv
+from pathlib import Path
 from strands import Agent, tool
 
-load_dotenv()
+load_dotenv(dotenv_path=Path(__file__).parent.parent / '.env.local')
 
 # Load agent1 output (transcription analysis)
 def load_agent1_output(filepath: str) -> Dict:
