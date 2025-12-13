@@ -103,9 +103,9 @@ const EmergencyDashboard = () => {
 
   // Load default address on component mount
   useEffect(() => {
-    const defaultAddress = '6425 Boaz Lane, Dallas, TX 75205';
+    const defaultAddress = (!loading && !error && jsonData) ? jsonData['agent1_analysis']['address'] : '6425 Boaz Lane, Dallas, TX 75205'; // SMU location
     geocodeAddress(defaultAddress);
-  }, []);
+  }, [jsonData]);
 
   // Function to handle file input and parse transcript
   const handleFileChange = (event) => {
@@ -307,7 +307,7 @@ const EmergencyDashboard = () => {
                       <div className="text-red-200/80 text-xs px-4">{mapError}</div>
                     </div>
                   </div>
-                ) : isLoadingLocation ? (
+                ) : false ? (
                   <div className="w-full h-full bg-blue-900/20 rounded-3xl flex items-center justify-center">
                     <div className="text-center">
                       <div className="animate-spin w-8 h-8 border-2 border-blue-300 border-t-transparent rounded-full mx-auto mb-2"></div>

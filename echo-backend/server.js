@@ -15,8 +15,8 @@ const BUCKET = 's3-stage-1-bucket-329857347';
 const s3Client = new S3Client({
   region: REGION,
   credentials: {
-    accessKeyId: '***REMOVED***',
-    secretAccessKey: '***REMOVED***',
+    accessKeyId: 'AKIAREVC3BKQMPNQRWUC',
+    secretAccessKey: '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',
   },
 });
 
