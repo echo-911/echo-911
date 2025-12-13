@@ -482,6 +482,31 @@ def generate_incident_audio_from_scripts(dispatch_result: Dict,
         "timestamp": datetime.now().isoformat()
     }
 
+def upload_folder_to_s3(local_folder_path, prefix="agentTwoOutput"):
+    """Upload entire local folder to S3 with same structure"""
+    if not os.getenv("S3_BUCKET_NAME"):
+        print("No S3_BUCKET_NAME env var set")
+        return
+    
+    s3_client = boto3.client('s3')
+    bucket_name = os.getenv("S3_BUCKET_NAME")
+    
+    # Get the parent directory to preserve the incident folder name
+    parent_dir = os.path.dirname(local_folder_path)
+    
+    for root, dirs, files in os.walk(local_folder_path):
+        for file in files:
+            local_file = os.path.join(root, file)
+            # Preserve folder structure including the incident folder
+            relative_path = os.path.relpath(local_file, parent_dir)
+            s3_key = f"{prefix}/{relative_path}".replace(os.sep, '/')
+            
+            print(f"Uploading {local_file} -> s3://{bucket_name}/{s3_key}")
+            s3_client.upload_file(local_file, bucket_name, s3_key)
+    
+    print(f"Uploaded folder '{local_folder_path}' to s3://{bucket_name}/{prefix}/")
+
+
 def main_pipeline(agent1_json_path: str = "agent1_output.json"):
     """Complete pipeline: agent1 → incident processing → dispatch → audio"""
     
@@ -527,15 +552,50 @@ def main_pipeline(agent1_json_path: str = "agent1_output.json"):
         'timestamp': datetime.now().isoformat()
     }
     
-    output_file = f"complete_dispatch_{datetime.now().strftime('%Y%m%d%H%M%S')}.json"
+    output_file = "incident_audio/" + final_results['incident']['id'] + f"/complete_dispatch.json"
     with open(output_file, 'w') as f:
         json.dump(final_results, f, indent=2, default=str)
+    
+    # Upload synchronously instead of using a daemon thread
+    if os.getenv("S3_BUCKET_NAME"):
+        prefix = "agentTwoOutput"
+        upload_folder_to_s3("incident_audio/" + final_results['incident']['id'], prefix)
     
     print(f"\n✅ PIPELINE COMPLETE!")
     print(f"📄 Results saved: {output_file}")
     if audio_result['success']:
         print(f"🔊 Audio generated: {audio_result['incident_folder']}")
     print(f"🚒 {len(assigned)} units dispatched | Severity: {incident['severity']}")
+
+def get_s3_client():
+    global _s3_client
+    if _s3_client is None:
+        with _client_lock:
+            if _s3_client is None:
+                _s3_client = boto3.client(
+                    "s3",
+                    region_name=os.getenv("AWS_REGION", "us-east-1"),
+                    aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID"),
+                    aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY")
+                )
+    return _s3_client
+def upload_to_s3(data: dict, prefix: str = "agent_results"):
+    s3_bucket = os.getenv("S3_BUCKET_NAME")
+    if not s3_bucket:
+        return
+    s3_client = get_s3_client()
+    from datetime import datetime
+    file_name = f"{prefix}/result_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+    try:
+        s3_client.put_object(
+            Bucket=s3_bucket,
+            Key=file_name,
+            Body=json.dumps(data),
+            ContentType="application/json"
+        )
+        print(f"Uploaded result to S3: s3://{s3_bucket}/{file_name}")
+    except Exception as e:
+        print(f"Failed to upload to S3: {e}")
 
 if __name__ == "__main__":
     # Usage: python dispatch_pipeline.py [agent1_output.json]

@@ -116,6 +116,118 @@ app.get('/api/agentbucket3/emergency_agent_results', async (req, res) => {
   }
 });
 
+// Utility: find latest incident folder under agentTwoOutput/
+async function getLatestIncidentPrefix() {
+  const listCommand = new ListObjectsV2Command({
+    Bucket: 'agentbucket3',
+    Prefix: 'agentTwoOutput/',        // where your incidents live
+  });
+
+  const listed = await s3Client.send(listCommand);
+  if (!listed.Contents || listed.Contents.length === 0) {
+    return null;
+  }
+
+  // Map each object to its "folder" = first segment after agentTwoOutput/
+  const folderMap = new Map(); // folderPrefix -> latest LastModified
+
+  for (const obj of listed.Contents) {
+    const key = obj.Key;                  // e.g. "agentTwoOutput/INC1765.../global_brief.mp3"
+    const parts = key.split('/');
+    if (parts.length < 3) continue;       // skip root objects like "agentTwoOutput/"
+
+    const folderPrefix = `${parts[0]}/${parts[1]}/`; // "agentTwoOutput/INC1765.../"
+    const current = folderMap.get(folderPrefix);
+    if (!current || obj.LastModified > current) {
+      folderMap.set(folderPrefix, obj.LastModified);
+    }
+  }
+
+  if (folderMap.size === 0) return null;
+
+  // Pick folder with newest LastModified
+  let latestFolder = null;
+  let latestDate = null;
+  for (const [folder, date] of folderMap.entries()) {
+    if (!latestDate || date > latestDate) {
+      latestDate = date;
+      latestFolder = folder;
+    }
+  }
+
+  return latestFolder; // e.g. "agentTwoOutput/INC1765596766/"
+}
+
+app.get('/api/agentbucket3/emergency_agent_results/incident_full_details', async (req, res) => {
+  try {
+    // 1) Find latest incident folder under agentTwoOutput/
+    const latestPrefix = await getLatestIncidentPrefix();
+    if (!latestPrefix) {
+      return res.status(404).json({ error: 'No incident folders found under agentTwoOutput/' });
+    }
+
+    // 2) List all objects in that folder
+    const listCommand = new ListObjectsV2Command({
+      Bucket: 'agentbucket3',
+      Prefix: latestPrefix,             // e.g. "agentTwoOutput/INC1765596766/"
+    });
+    const listedObjects = await s3Client.send(listCommand);
+
+    if (!listedObjects.Contents || listedObjects.Contents.length === 0) {
+      return res.status(404).json({ error: `No objects found in latest incident folder ${latestPrefix}` });
+    }
+
+    // 3) Fetch every object in that folder
+    const files = [];
+    for (const obj of listedObjects.Contents) {
+      if (!obj.Key || obj.Key.endsWith('/')) continue; // skip folder placeholder
+
+      const getCommand = new GetObjectCommand({
+        Bucket: 'agentbucket3',
+        Key: obj.Key,                  // no Prefix field here
+      });
+      const response = await s3Client.send(getCommand);
+
+      // Decide how to return: JSON as parsed, audio as base64 or leave as is
+      const contentType = response.ContentType || 'application/octet-stream';
+
+      let body;
+      if (contentType.startsWith('application/json') || obj.Key.endsWith('.json')) {
+        const text = await streamToString(response.Body);
+        body = JSON.parse(text);
+      } else {
+        // For mp3s etc. send as base64 so frontend can reconstruct Blob
+        const buf = await new Promise((resolve, reject) => {
+          const chunks = [];
+          response.Body.on('data', (c) => chunks.push(c));
+          response.Body.on('error', reject);
+          response.Body.on('end', () => resolve(Buffer.concat(chunks)));
+        });
+        body = buf.toString('base64');
+      }
+
+      files.push({
+        key: obj.Key,          // full S3 key
+        contentType,
+        body,                  // JSON object or base64 string
+      });
+    }
+
+    // 4) Return everything together
+    res.json({
+      incidentPrefix: latestPrefix,  // e.g. "agentTwoOutput/INC1765596766/"
+      files,                         // all JSON + mp3 files from that folder
+    });
+  } catch (error) {
+    console.error('Error fetching latest incident folder from agentTwoOutput:', error);
+    if (error.$metadata) {
+      console.log('AWS SDK Metadata:', error.$metadata);
+    }
+    res.status(500).json({ error: 'Failed to fetch latest incident data from S3 (agentTwoOutput/)' });
+  }
+});
+
+
 app.get('/api/agentbucket-latest-json', async (req, res) => {
   try {
     const listCommand = new ListObjectsV2Command({
