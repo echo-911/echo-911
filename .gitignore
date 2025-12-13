@@ -61,7 +61,7 @@ apps/**/public/build/
 packages/**/lib/
 
 # agent outputs
-emergency-classifier-test/dispatch_dialogue_result.json
-emergency-classifier-test/emergency_agent_result.json
-emergency-classifier-test/incident_processing_result.json
-emergency-classifier-test/incident_audio/*
+echo-agents/dispatch_dialogue_result.json
+echo-agents/emergency_agent_result.json
+echo-agents/incident_processing_result.json
+echo-agents/incident_audio/*
