@@ -70,7 +70,34 @@ const EmergencyDashboard = () => {
     };
 
     fetchLatestJsonFromApi();
-    fetchLatestTranscriptFromApi();
+    // fetchLatestTranscriptFromApi();
+  
+    console.log("webscok");
+    const ws = new WebSocket('wss://k3ewnbood9.execute-api.us-west-2.amazonaws.com/production/');
+    
+    ws.onopen = () => {
+        console.log('WebSocket connected');
+    };
+    
+    ws.onmessage = (event) => {
+        const transcriptSegment = JSON.parse(event.data);
+        // Append to transcript state
+        setTranscript(prev => [...prev, {
+            speaker: transcriptSegment.speaker,
+            message: transcriptSegment.message,
+            time: new Date(transcriptSegment.time).toLocaleTimeString()
+        }]);
+    };
+    
+    ws.onerror = (error) => {
+        console.error('WebSocket error:', error);
+    };
+    
+    ws.onclose = () => {
+        console.log('WebSocket disconnected');
+    };
+    
+    return () => ws.close();
   }, []);
 
   // Function to geocode an address
@@ -248,14 +275,13 @@ const EmergencyDashboard = () => {
               <div className="text-white/85 text-sm font-light leading-relaxed space-y-4 h-[250px] overflow-y-auto">
                 {transcript.length > 0 ? (
                   transcript.map((item, index) => (
-                    <p className="">{item}</p>
-                    // <div
-                    //   key={index}
-                    //   className={`backdrop-blur-sm bg-white/4 rounded-2xl p-4 border-l-4 ${item.speaker === 'Dispatcher' ? 'border-blue-300/60' : 'border-green-300/60'}`}
-                    // >
-                    //   <p className="font-medium text-white/95">[{item.speaker}]: "{item.message}"</p>
-                    //   <span className="text-xs text-white/60 font-light">{item.time || 'Timestamp N/A'}</span>
-                    // </div>
+                    <div
+                      key={index}
+                      className={`backdrop-blur-sm bg-white/4 rounded-2xl p-4 border-l-4 ${item.speaker === 'Dispatcher' ? 'border-blue-300/60' : 'border-green-300/60'}`}
+                    >
+                      <p className="font-medium text-white/95">[{item.speaker}]: "{item.message}"</p>
+                      <span className="text-xs text-white/60 font-light">{item.time || 'Timestamp N/A'}</span>
+                    </div>
                   ))
                 ) : (
                   <div className="flex items-center space-x-2 px-4 py-2">
