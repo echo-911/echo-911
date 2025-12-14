@@ -82,11 +82,34 @@ const EmergencyDashboard = () => {
     ws.onmessage = (event) => {
         const transcriptSegment = JSON.parse(event.data);
         // Append to transcript state
-        setTranscript(prev => [...prev, {
-            speaker: transcriptSegment.speaker,
-            message: transcriptSegment.message,
-            time: new Date(transcriptSegment.time).toLocaleTimeString()
-        }]);
+        setTranscript(prev => {
+          const lastItem = prev[prev.length - 1];
+          const newTime = new Date(transcriptSegment.time).toLocaleTimeString();
+          
+          // Check if same speaker as previous message
+          if (lastItem && lastItem.speaker === transcriptSegment.speaker) {
+              // Check if previous message ends with punctuation
+              const punctuationRegex = /[.!?,;:]$/;
+              const needsPeriod = !punctuationRegex.test(lastItem.message.trim());
+              
+              // Update the last item with appended message and new timestamp
+              return [
+                  ...prev.slice(0, -1),
+                  {
+                      ...lastItem,
+                      message: lastItem.message + (needsPeriod ? '. ' : ' ') + transcriptSegment.message,
+                      time: newTime
+                  }
+              ];
+          }
+          
+          // Different speaker, add new entry
+          return [...prev, {
+              speaker: transcriptSegment.speaker,
+              message: transcriptSegment.message,
+              time: newTime
+          }];
+        });
     };
     
     ws.onerror = (error) => {
