@@ -261,45 +261,60 @@ const EmergencyDashboard = () => {
 
         <div className="grid grid-cols-12 gap-4">
           <div className="col-span-7 space-y-4">
-            {/* Top Left - Transcript with file input */}
-            <div className="backdrop-blur-xl bg-white/6 border border-white/15 rounded-3xl p-8 h-[400px] hover:scale-[1.01] hover:bg-white/8 transition-all duration-500">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-2xl font-extralight text-white/95 tracking-wide">
-                  Live Transcript
-                </h3>
-                <span className="text-xs font-medium text-white/70 bg-white/10 px-3 py-2 rounded-full backdrop-blur-sm">
+            {/* Live Transcript - Optimized for Vertical Density */}
+            <div className="backdrop-blur-xl bg-white/6 border border-white/15 rounded-3xl p-6 h-[400px] hover:bg-white/8 transition-all duration-300">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                  <h3 className="text-xl font-extralight text-white/95 tracking-wide">
+                    Live Transcript
+                  </h3>
+                </div>
+                <span className="text-xs font-medium text-white/70 bg-white/10 px-3 py-1 rounded-full backdrop-blur-sm">
                   Real-time
                 </span>
               </div>
-             
-              <div className="text-white/85 text-sm font-light leading-relaxed space-y-4 h-[250px] overflow-y-auto">
+            
+              <div className="h-[320px] overflow-y-auto space-y-2 pr-2 scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent">
                 {transcript.length > 0 ? (
                   transcript.map((item, index) => (
                     <div
                       key={index}
-                      className={`backdrop-blur-sm bg-white/4 rounded-2xl p-4 border-l-4 ${item.speaker === 'Dispatcher' ? 'border-blue-300/60' : 'border-green-300/60'}`}
+                      className={`rounded-xl p-3 transition-all duration-200 ${
+                        item.speaker === 'AGENT'
+                          ? 'bg-blue-500/10 border-l-3 border-blue-400/70'
+                          : 'bg-green-500/10 border-l-3 border-green-400/70'
+                      }`}
                     >
-                      <p className="font-medium text-white/95">[{item.speaker}]: "{item.message}"</p>
-                      <span className="text-xs text-white/60 font-light">{item.time || 'Timestamp N/A'}</span>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className={`text-[10px] font-semibold uppercase tracking-wider ${
+                          item.speaker === 'AGENT' ? 'text-blue-300' : 'text-green-300'
+                        }`}>
+                          {item.speaker}
+                        </span>
+                        <span className="text-[10px] text-white/50 font-light">
+                          {item.time || 'N/A'}
+                        </span>
+                      </div>
+                      <p className="text-white/90 text-sm leading-snug">
+                        {item.message}
+                      </p>
                     </div>
                   ))
                 ) : (
-                  <div className="flex items-center space-x-2 px-4 py-2">
-                    <div className="w-2 h-2 bg-red-400 rounded-full animate-pulse"></div>
-                    <span className="text-white/60 text-xs font-light italic"></span>
-                    <div className="text-white/60 text-xs font-light italic space-y-2">
-                      <p>Situation:</p>
-                      <p><strong>911 Operator:</strong> 911, what's your emergency?</p>
-                      <p><strong>Caller:</strong> There's a house fire at 456 Oak Street! The flames are coming out of the windows on the second floor!</p>
-                      <p><strong>911 Operator:</strong> Is anyone inside the house?</p>
-                      <p><strong>Caller:</strong> I don't know, I think the family might still be inside. I can hear someone screaming for help!</p>
-                      <p><strong>911 Operator:</strong> We're sending fire department and paramedics immediately. Are you in a safe location?</p>
-                      <p><strong>Caller:</strong> Yes, I'm across the street. But please hurry, the fire is spreading fast!</p>
+                  <div className="flex flex-col items-center justify-center h-full text-white/60">
+                    <div className="text-center space-y-2">
+                      <div className="flex items-center justify-center gap-2">
+                        <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse"></div>
+                        <span className="text-sm font-light">Waiting for conversation...</span>
+                      </div>
                     </div>
                   </div>
                 )}
               </div>
             </div>
+
+
 
             {/* Bottom Left - Key Details */}
             <div className="backdrop-blur-xl bg-white/6 border border-white/15 rounded-3xl p-6 h-[205px] hover:scale-[1.01] transition-all duration-300">
