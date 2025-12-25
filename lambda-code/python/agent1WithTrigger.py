@@ -3,110 +3,159 @@ import json
 import boto3
 import time
 import requests
-import concurrent.futures
+import urllib.parse
 from datetime import datetime
+from functools import lru_cache
 
 # Initialize S3 and Bedrock clients globally for re-use across warm starts
 s3_client = boto3.client('s3')
 bedrock_client = boto3.client('bedrock-runtime')
 session = requests.Session()
 
-# --- Hardcoded Geocoding (Carried over from your agent1.py) ---
+# ---------------- Tools (Updated from local agent1.py) ----------------
+
+@lru_cache(maxsize=100)
 def geocode_address(address: str) -> dict:
+    """HACKATHON VERSION: Hardcoded geocoding for reliable demo"""
     hardcoded_addresses = {
         "456 Oak Street": {"lat": 30.2672, "lon": -97.7431, "display_name": "456 Oak Street, Austin, TX 78705"},
         "123 Main Street": {"lat": 30.2650, "lon": -97.7470, "display_name": "123 Main Street, Austin, TX 78701"},
+        "789 Elm Avenue": {"lat": 30.2800, "lon": -97.7500, "display_name": "789 Elm Avenue, Austin, TX 78702"},
+        "555 Fire Lane": {"lat": 30.2900, "lon": -97.7600, "display_name": "555 Fire Lane, Austin, TX 78703"},
         "701 W 34th St, Austin, TX 78705": {"lat": 30.2951, "lon": -97.7437, "display_name": "701 W 34th St, Austin, TX 78705"}
     }
+
     addr_lower = address.lower()
     for addr, coords in hardcoded_addresses.items():
         if addr.lower() == addr_lower:
             return coords
-    return {"lat": 30.2672, "lon": -97.7431, "display_name": f"{address}, Austin, TX (demo)", "fallback": True}
+            
+    # Partial matching logic from local agent1.py
+    for addr, coords in hardcoded_addresses.items():
+        if any(part.lower() in addr_lower for part in addr.lower().split() if len(part) > 2):
+            coords_copy = coords.copy()
+            coords_copy["display_name"] = f"{address} (matched to: {coords['display_name']})"
+            return coords_copy
+            
+    return {"lat": 30.2672, "lon": -97.7431, "display_name": f"{address}, Austin, TX (demo location)", "fallback": True}
 
-# --- Core Logic Functions (Adapted from your agent1.py) ---
 def get_weather(lat: float, lon: float) -> dict:
     url = "https://api.open-meteo.com/v1/forecast"
     params = {"latitude": round(lat, 2), "longitude": round(lon, 2), "current_weather": True}
     try:
         r = session.get(url, params=params, timeout=5)
         cw = r.json().get("current_weather", {})
-        return {"temperature_c": cw.get("temperature"), "windspeed_m_s": cw.get("windspeed")}
+        return {
+            "temperature_c": cw.get("temperature"),
+            "windspeed_m_s": cw.get("windspeed"),
+            "weathercode": cw.get("weathercode")
+        }
     except:
         return {"error": "weather failed"}
 
-def invoke_claude(prompt: str, max_tokens: int = 400):
-    body = json.dumps({
-        "anthropic_version": "bedrock-2023-05-31",
-        "max_tokens": max_tokens,
-        "messages": [{"role": "user", "content": prompt}]
-    })
-    response = bedrock_client.invoke_model(
-        body=body,
-        modelId="anthropic.claude-3-sonnet-20240229-v1:0",
-        accept="application/json",
-        contentType="application/json"
-    )
-    return json.loads(response['body'].read())['content'][0]['text'].strip()
+def describe_area_with_claude(location_name: str, context: str = "emergency") -> str:
+    try:
+        if context == "emergency":
+            prompt = f"Please provide emergency response information for this location: {location_name}\nInclude demographics, terrain, hazards, landmarks, building types. Focus on first responder needs."
+        else:
+            prompt = f"Please give me information about this area including demographics and terrain: {location_name}"
+
+        body = json.dumps({
+            "anthropic_version": "bedrock-2023-05-31",
+            "max_tokens": 400,
+            "messages": [{"role": "user", "content": prompt}]
+        })
+        response = bedrock_client.invoke_model(
+            body=body,
+            modelId="anthropic.claude-3-sonnet-20240229-v1:0",
+            accept="application/json",
+            contentType="application/json"
+        )
+        return json.loads(response['body'].read())['content'][0]['text'].strip()
+    except Exception as e:
+        return f"Area description unavailable: {e}"
+
+# ---------------- Call Info Logic (Updated from local agent1.py) ----------------
+
+SEVERITY_LEVELS = {
+    1: "Low Priority - Routine response",
+    2: "Medium Priority - Standard response",
+    3: "High Priority - Urgent response needed", 
+    4: "Critical Priority - Immediate response required",
+    5: "Mass Casualty - All available resources"
+}
 
 def extract_call_info(transcript: str, sentiment: str) -> dict:
-    # Severity Logic
-    levels = {1: "Low", 2: "Medium", 3: "High", 4: "Critical", 5: "Mass Casualty"}
     t_lower = transcript.lower()
-    level = 1
-    if "mass casualty" in t_lower: level = 5
-    elif "critical" in t_lower or "screaming" in t_lower: level = 4
-    elif "fire" in t_lower: level = 3
+    if "mass casualty" in t_lower or "multiple people" in t_lower:
+        level_text = SEVERITY_LEVELS[5]
+    elif "critical" in t_lower or "immediately" in t_lower or "screaming" in t_lower:
+        level_text = SEVERITY_LEVELS[4]
+    elif "fire" in t_lower or "urgent" in t_lower:
+        level_text = SEVERITY_LEVELS[3]
+    elif "medium" in t_lower:
+        level_text = SEVERITY_LEVELS[2]
+    else:
+        level_text = SEVERITY_LEVELS[1]
+
+    # Use the specific Bedrock prompts from local agent1.py
+    def invoke_bedrock(p, tokens):
+        body = json.dumps({"anthropic_version": "bedrock-2023-05-31", "max_tokens": tokens, "messages": [{"role": "user", "content": p}]})
+        resp = bedrock_client.invoke_model(body=body, modelId="anthropic.claude-3-sonnet-20240229-v1:0")
+        return json.loads(resp['body'].read())['content'][0]['text'].strip()
+
+    summary_prompt = f"Summarize this 911 call in one line (max 15 words): {transcript}"
+    info_prompt = f"Extract the top 3 key pieces of information from this 911 transcript for responders: {transcript}"
+
+    summary = invoke_bedrock(summary_prompt, 100).strip('"\'')
+    additional = invoke_bedrock(info_prompt, 300)
     
-    summary = invoke_claude(f"Summarize this 911 call in one line: {transcript}", 100)
-    additional = invoke_claude(f"Extract top 3 key info points for responders from this transcript: {transcript}", 300)
-    
+    # Clean up bullets as done in local code
+    bullets = [line.strip(" -•") for line in additional.splitlines() if line.strip() and not line.lower().startswith("here")]
+
+    words = level_text.split()
     return {
         "Sentiment": sentiment,
-        "ThreatLevel": levels[level],
+        "ThreatLevel": " ".join(words[:2]),
+        "ThreatLevelDescription": " ".join(words[3:]),
         "Summary": summary,
-        "AdditionalInfo": additional.splitlines()[:3]
+        "AdditionalInfo": bullets[:3]
     }
 
-# --- Lambda Entry Point ---
+# ---------------- Lambda Entry Point ----------------
+
 def lambda_handler(event, context):
-    import urllib.parse
-    # 1. Get bucket and key from the S3 event
     bucket = event['Records'][0]['s3']['bucket']['name']
-    key = urllib.parse.unquote_plus(event['Records'][0]['s3']['object']['key']) # clean key
+    key = urllib.parse.unquote_plus(event['Records'][0]['s3']['object']['key'])
     filename = os.path.basename(key)
     
-    # Avoid infinite loops: Don't process files in the results folder
     if key.startswith('emergency_agent_results/'):
         return {'status': 'skipped'}
 
-    print(f"Processing new file: s3://{bucket}/{key}")
-
-    # 2. Download and Parse the JSON
+    # 1. Download and Parse
     response = s3_client.get_object(Bucket=bucket, Key=key)
     transcription_json = json.loads(response['Body'].read().decode('utf-8'))
     
-    # Combine all messages from the "transcript" list into one paragraph
+    # Handle the list structure of your new frontend JSON
     if "transcript" in transcription_json:
         full_transcript = " ".join([item["message"] for item in transcription_json["transcript"]])
     else:
-        # Fallback for your old format just in case
         full_transcript = transcription_json.get("TranscriptText", "")
 
-    # 3. Execute Agent Logic
+    # 2. Execute Logic
     start_time = time.time()
-    address = "456 Oak Street" # Usually you'd extract this from the JSON
+    address = "456 Oak Street" # Hardcoded for demo as per local script
     geo = geocode_address(address)
     
     weather = get_weather(geo['lat'], geo['lon'])
-    area_desc = invoke_claude(f"Emergency hazards for: {geo['display_name']}")
+    area_desc = describe_area_with_claude(geo['display_name'], context="emergency")
     
     call_info = extract_call_info(
         full_transcript,
         transcription_json.get("Sentiment", {}).get("Sentiment", "UNKNOWN")
     )
 
-    # 4. Consolidate Results
+    # 3. Consolidate Results
     result = {
         "address": geo["display_name"],
         "coordinates": geo,
@@ -117,7 +166,7 @@ def lambda_handler(event, context):
         "processed_at": datetime.now().isoformat()
     }
 
-    # 5. Save back to S3
+    # 4. Save back to S3
     result_key = f"emergency_agent_results/result_{filename}"
     s3_client.put_object(
         Bucket=bucket,
