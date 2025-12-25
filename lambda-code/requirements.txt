@@ -1,0 +1,5 @@
+python-dotenv>=1.0.0
+requests
+strands-agents
+strands-agents-tools 
+strands-agents-builder

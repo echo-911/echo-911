@@ -70,3 +70,8 @@ echo-agents/dispatch_dialogue_result.json
 echo-agents/emergency_agent_result.json
 echo-agents/incident_processing_result.json
 echo-agents/incident_audio/*
+
+#ignore all in python folder
+lambda-code/python/*
+# do not ignore
+!lambda-code/python/agent1WithTrigger.py
