@@ -307,6 +307,68 @@ app.post('/api/upload-transcript', async (req, res) => {
   }
 });
 
+// Helper to pause execution
+const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+app.get('/api/poll-for-agent1-result', async (req, res) => {
+  const { fileName } = req.query; // Expecting the name of the file to look for
+  const BUCKET_NAME = 'transcripts-from-frontend';
+  const PREFIX = 'emergency_agent_results/';
+  
+  if (!fileName) {
+    return res.status(400).json({ error: 'fileName query parameter is required' });
+  }
+
+  const maxAttempts = 12; // 12 attempts * 5 seconds = 60 seconds
+  const pollInterval = 5000; // 5 seconds
+
+  console.log(`Starting poll for ${fileName} in ${BUCKET_NAME}/${PREFIX}`);
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      // We check if the specific object exists
+      const getCommand = new GetObjectCommand({
+        Bucket: BUCKET_NAME,
+        Key: `${PREFIX}${fileName}`, 
+      });
+
+      const response = await s3Client.send(getCommand);
+      
+      // If we reach here, the file was found!
+      const bodyContents = await streamToString(response.Body);
+      const parsedJson = JSON.parse(bodyContents);
+
+      console.log(`Found file ${fileName} on attempt ${attempt}`);
+      return res.json({ 
+        status: 'found', 
+        attempt, 
+        data: parsedJson 
+      });
+
+    } catch (error) {
+      // S3 throws a 'NoSuchKey' error if the file isn't there yet
+      if (error.name === 'NoSuchKey') {
+        console.log(`Attempt ${attempt}: File ${fileName} not found yet. Retrying in 5s...`);
+        if (attempt < maxAttempts) {
+          await delay(pollInterval);
+          continue;
+        }
+      } else {
+        // Some other error (permissions, network, etc.)
+        console.error('Error during polling:', error);
+        return res.status(500).json({ error: 'Error while polling S3' });
+      }
+    }
+  }
+
+  // If the loop finishes without returning, we timed out
+  console.log("Could not find the file, timed out");
+  return res.status(404).json({ 
+    error: 'Timeout: Result file not found within 60 seconds.' 
+  });
+});
+
+
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);

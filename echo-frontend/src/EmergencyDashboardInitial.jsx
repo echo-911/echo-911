@@ -24,6 +24,8 @@ const EmergencyDashboard = () => {
   const tStart = useRef("");
   const wsRef = useRef(null); // Keep a reference to the socket
 
+  const [waitingForAgent1Response, setWaitingForAgent1Response] = useState(false);
+
   const [location, setLocation] = useState(null);
   const [currentAddress, setCurrentAddress] = useState('6425 Boaz Lane, Dallas, TX 75205');
   const [mapError, setMapError] = useState(null);
@@ -166,6 +168,7 @@ const EmergencyDashboard = () => {
               postTranscriptToServer(finalTranscript, startTime).then((response) => {
               if (response.ok) {
                 console.log('Transcript successfully uploaded to S3 via server');
+                setWaitingForAgent1Response(true)
               } else {
                 console.error('Failed to upload transcript');
               }
@@ -178,6 +181,28 @@ const EmergencyDashboard = () => {
     
     return () => ws.close();
   }, []);
+
+  useEffect(() => {
+    if (!waitingForAgent1Response)
+      return;
+    const fileName = `result_transcript-${tStart.current !== "" ? tStart.current : new Date().toISOString()}.json`
+    const queryParams = new URLSearchParams({ fileName });
+    fetch(`http://localhost:4000/api/poll-for-agent1-result?${queryParams}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        })
+        .then((res) => {
+          if (!res.ok) throw new Error('Network response was not ok');
+          return res.json(); // Must parse the stream to JSON
+        })
+        .then((result) => {
+          console.log("Found data:", result.data);
+          setWaitingForAgent1Response(false); // Recommended: stop polling once found
+        })
+        .catch((err) => console.error("Polling error:", err));
+  }, [waitingForAgent1Response]);
 
   // Function to geocode an address
   const geocodeAddress = (address) => {

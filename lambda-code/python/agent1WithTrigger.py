@@ -70,9 +70,11 @@ def extract_call_info(transcript: str, sentiment: str) -> dict:
 
 # --- Lambda Entry Point ---
 def lambda_handler(event, context):
+    import urllib.parse
     # 1. Get bucket and key from the S3 event
     bucket = event['Records'][0]['s3']['bucket']['name']
-    key = event['Records'][0]['s3']['object']['key']
+    key = urllib.parse.unquote_plus(event['Records'][0]['s3']['object']['key']) # clean key
+    filename = os.path.basename(key)
     
     # Avoid infinite loops: Don't process files in the results folder
     if key.startswith('emergency_agent_results/'):
@@ -116,7 +118,7 @@ def lambda_handler(event, context):
     }
 
     # 5. Save back to S3
-    result_key = f"emergency_agent_results/result_{int(time.time())}.json"
+    result_key = f"emergency_agent_results/result_{filename}"
     s3_client.put_object(
         Bucket=bucket,
         Key=result_key,
