@@ -199,6 +199,7 @@ const EmergencyDashboard = () => {
         })
         .then((result) => {
           console.log("Found data:", result.data);
+          setJsonData(result.data);
           setWaitingForAgent1Response(false); // Recommended: stop polling once found
         })
         .catch((err) => console.error("Polling error:", err));
