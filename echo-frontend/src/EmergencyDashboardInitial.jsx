@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { GoogleMap, LoadScript, Marker } from '@react-google-maps/api';
 import backgroundImage from './hackathon2.jpg';
 import App2 from "./App2";
@@ -20,6 +20,10 @@ const MOCK_ADDITIONAL_INFO = [
 
 const EmergencyDashboard = () => {
   const [transcript, setTranscript] = useState([]);
+  const transcriptRef = useRef([]); // ref syncs with transcript so that ws.onclose has access to the latest data
+  const tStart = useRef("");
+  const wsRef = useRef(null); // Keep a reference to the socket
+
   const [location, setLocation] = useState(null);
   const [currentAddress, setCurrentAddress] = useState('6425 Boaz Lane, Dallas, TX 75205');
   const [mapError, setMapError] = useState(null);
@@ -31,6 +35,20 @@ const EmergencyDashboard = () => {
   const [jsonData, setJsonData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+
+  // The Manual End Call Trigger
+  const handleEndCall = () => {
+    if (wsRef.current) {
+      console.log("Manually ending call...");
+      wsRef.current.close(1000, "User clicked End Call");
+      // Note: ws.onclose will fire automatically after this
+    }
+  };
+
+  useEffect(() => {
+    transcriptRef.current = transcript;
+  }, [transcript]);
 
   useEffect(() => {
     const fetchLatestJsonFromApi = async () => {
@@ -69,14 +87,32 @@ const EmergencyDashboard = () => {
       }
     };
 
+    const postTranscriptToServer = async (finalTranscript, startTime) => {
+      try {
+        const response = await fetch('http://localhost:4000/api/upload-transcript', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ transcript: finalTranscript, date: startTime}),
+        });
+        console.log(response);
+        return response;
+      } catch (err) {
+        console.error(err);
+      }
+    };
+
     fetchLatestJsonFromApi();
     // fetchLatestTranscriptFromApi();
   
     console.log("webscok");
     const ws = new WebSocket('wss://k3ewnbood9.execute-api.us-west-2.amazonaws.com/production/');
+    wsRef.current = ws;
     
     ws.onopen = () => {
         console.log('WebSocket connected');
+        new Date().toISOString()
     };
     
     ws.onmessage = (event) => {
@@ -85,6 +121,10 @@ const EmergencyDashboard = () => {
         setTranscript(prev => {
           const lastItem = prev[prev.length - 1];
           const newTime = new Date(transcriptSegment.time).toLocaleTimeString();
+          if (prev.length === 0) {
+            tStart.current = new Date().toISOString();
+            console.log("got new start at ", tStart.current);
+          }
           
           // Check if same speaker as previous message
           if (lastItem && lastItem.speaker === transcriptSegment.speaker) {
@@ -118,6 +158,22 @@ const EmergencyDashboard = () => {
     
     ws.onclose = () => {
         console.log('WebSocket disconnected');
+
+        const finalTranscript = transcriptRef.current;
+        const startTime = tStart.current !== "" ? tStart.current : new Date().toISOString();
+        if (finalTranscript.length > 0) {
+          try {
+              postTranscriptToServer(finalTranscript, startTime).then((response) => {
+              if (response.ok) {
+                console.log('Transcript successfully uploaded to S3 via server');
+              } else {
+                console.error('Failed to upload transcript');
+              }
+            });
+          } catch (err) {
+            console.error('Network error during transcript upload:', err);
+          }
+        }
     };
     
     return () => ws.close();
@@ -278,6 +334,12 @@ const EmergencyDashboard = () => {
               className="px-4 py-2 text-sm rounded-xl bg-white/20 text-white font-sans font-light hover:bg-white/30 backdrop-blur-md border border-white/30 transition ml-4"
             >
               Find Dispatcher
+            </button>
+            <button
+              onClick={handleEndCall}
+              className="px-4 py-2 text-sm rounded-xl bg-red-500/30 text-red-100 font-sans font-medium hover:bg-red-500/50 backdrop-blur-md border border-red-400/30 transition ml-4"
+            >
+              End Call & Save Transcript
             </button>
           </div>
         </div>

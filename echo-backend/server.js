@@ -1,6 +1,6 @@
 // server.js
 const express = require('express');
-const { S3Client, ListObjectsV2Command, GetObjectCommand } = require('@aws-sdk/client-s3');
+const { S3Client, ListObjectsV2Command, GetObjectCommand, PutObjectCommand } = require('@aws-sdk/client-s3');
 const cors = require('cors');
 const streamToString = require('./utils').streamToString; // See the helper function below
 
@@ -273,6 +273,37 @@ app.get('/api/agentbucket-latest-json', async (req, res) => {
         console.log('AWS SDK Metadata:', error.$metadata);
     }
     res.status(500).json({ error: 'Failed to fetch data from S3 (agentbucket3)' });
+  }
+});
+
+// POST
+app.post('/api/upload-transcript', async (req, res) => {
+  try {
+    const { transcript, date } = req.body;
+    
+    if (!transcript || transcript.length === 0) {
+      return res.status(400).json({ error: 'No transcript data provided' });
+    }
+
+    const fileName = `transcripts/transcript-${date}.json`;
+    
+    const putCommand = new PutObjectCommand({
+      Bucket: "transcripts-from-frontend",
+      Key: fileName,
+      Body: JSON.stringify({
+        timestamp: new Date().toISOString(),
+        transcript: transcript
+      }),
+      ContentType: 'application/json',
+    });
+
+    await s3Client.send(putCommand);
+    
+    console.log(`Successfully uploaded transcript: ${fileName}`);
+    res.json({ message: 'Transcript uploaded successfully', key: fileName });
+  } catch (error) {
+    console.error('Error uploading transcript to S3:', error);
+    res.status(500).json({ error: 'Failed to upload transcript' });
   }
 });
 
