@@ -233,7 +233,7 @@ Requirements:
 
     return call_claude(prompt, max_tokens=250)
 
-def process_incident_from_agent1(agent1_data: Dict, responders: List[Dict]) -> Dict:
+def process_incident_from_agent1(agent1_data: Dict, responders: List[Dict], key: str) -> Dict:
     """Process agent1 output to create dispatch-ready incident data using LLM classification."""
     # 1) Ask the LLM to classify the incident
     classification = llm_classify_incident(agent1_data)
@@ -277,7 +277,7 @@ def process_incident_from_agent1(agent1_data: Dict, responders: List[Dict]) -> D
         print(f"  {r['unit']} - {r['name']} ({r['type']}) ETA {r['eta_minutes']} min")
 
     incident = {
-        "id": f"INC{int(time.time())}",
+        "id": f"INC_{key.split('/')[-1].split('.')[0]}",
         "type": classification["incident_type"],
         "description": summary,
         "location": address,
@@ -545,7 +545,7 @@ def lambda_handler(event, context):
     
     # Step 2: Process incident and assign responders
     print("\n🚨 Processing incident...")
-    incident_results = process_incident_from_agent1(agent1_data, RESPONDERS)
+    incident_results = process_incident_from_agent1(agent1_data, RESPONDERS, key)
     
     # LAMBDA: Save to /tmp
     with open("/tmp/incident_processing_result.json", "w", encoding="utf-8") as f:
