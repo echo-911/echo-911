@@ -368,6 +368,98 @@ app.get('/api/poll-for-agent1-result', async (req, res) => {
   });
 });
 
+const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
+
+app.get('/api/poll-for-agentTwo-result', async (req, res) => {
+  const { folderName } = req.query; // Expecting the name of the file to look for
+  const BUCKET_NAME = 'transcripts-from-frontend';
+  const PREFIX = 'agentTwoOutput/' + folderName + '/';
+  
+  if (!folderName) {
+    return res.status(400).json({ error: 'folderName query parameter is required' });
+  }
+
+  const maxAttempts = 12; // 12 attempts * 5 seconds = 60 seconds
+  const pollInterval = 5000; // 5 seconds
+
+  console.log(`Starting poll for ${folderName} in ${BUCKET_NAME}/${PREFIX}`);
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      // 1. POLL: Check specifically for 'complete_dispatch.json'
+      // This file is written last by Agent Two, so it confirms everything is ready.
+      const jsonCommand = new GetObjectCommand({
+        Bucket: BUCKET_NAME,
+        Key: `${PREFIX}complete_dispatch.json`, 
+      });
+
+      // If this throws, the file isn't there yet (go to catch block)
+      const jsonResponse = await s3Client.send(jsonCommand);
+      
+      // --- IF WE REACH HERE, AGENT TWO IS DONE ---
+      
+      console.log(`Found complete_dispatch.json on attempt ${attempt}`);
+
+      // 2. FETCH JSON DATA: Read the metadata
+      const bodyContents = await streamToString(jsonResponse.Body);
+      const dispatchData = JSON.parse(bodyContents);
+
+      // 3. LIST AUDIO FILES: Find all generated mp3s in this folder
+      const listCommand = new ListObjectsV2Command({
+        Bucket: BUCKET_NAME,
+        Prefix: PREFIX
+      });
+      const listResponse = await s3Client.send(listCommand);
+      
+      // 4. GENERATE SECURE LINKS (Pre-signed URLs)
+      // This allows the frontend to stream private S3 files securely
+      const audioFiles = [];
+      
+      if (listResponse.Contents) {
+        for (const item of listResponse.Contents) {
+          // Skip the JSON file, we only want mp3s here
+          if (item.Key.endsWith('.mp3')) {
+            const command = new GetObjectCommand({ Bucket: BUCKET_NAME, Key: item.Key });
+            // Generate a link valid for 15 minutes (900 seconds)
+            const url = await getSignedUrl(s3Client, command, { expiresIn: 900 });
+            
+            audioFiles.push({
+              filename: item.Key.split('/').pop(), // e.g. "Unit_23.mp3"
+              url: url
+            });
+          }
+        }
+      }
+
+      // 5. RETURN EVERYTHING
+      return res.json({ 
+        status: 'found', 
+        attempt, 
+        dispatch_data: dispatchData,
+        audio_files: audioFiles
+      });
+
+    } catch (error) {
+      if (error.name === 'NoSuchKey' || error.name === 'NotFound') {
+        console.log(`Attempt ${attempt}: Agent Two not finished yet...`);
+        if (attempt < maxAttempts) {
+          await delay(pollInterval);
+          continue;
+        }
+      } else {
+        // Some other error (permissions, network, etc.)
+        console.error('Error during polling:', error);
+        return res.status(500).json({ error: 'Error while polling S3' });
+      }
+    }
+  }
+
+  // If the loop finishes without returning, we timed out
+  console.log("Could not find the file, timed out");
+  return res.status(404).json({ 
+    error: 'Timeout: Result file not found within 60 seconds.' 
+  });
+});
 
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => {
