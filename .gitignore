@@ -75,3 +75,4 @@ echo-agents/incident_audio/*
 lambda-code/python/*
 # do not ignore
 !lambda-code/python/agent1WithTrigger.py
+!lambda-code/python/agentTwoWithTrigger.py
