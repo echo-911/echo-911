@@ -277,7 +277,7 @@ def process_incident_from_agent1(agent1_data: Dict, responders: List[Dict], key:
         print(f"  {r['unit']} - {r['name']} ({r['type']}) ETA {r['eta_minutes']} min")
 
     incident = {
-        "id": f"INC_{key.split('/')[-1].split('.')[0]}",
+        "id": f"INC_{key.split('/')[-1].split('.json')[0]}",
         "type": classification["incident_type"],
         "description": summary,
         "location": address,
