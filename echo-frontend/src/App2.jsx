@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { GoogleMap, LoadScript, Marker } from '@react-google-maps/api';
 import backgroundImage from './hackathon2.jpg';
+import { useLocation } from 'react-router-dom';
 
 // Mock data for agents
 const MOCK_KEY_DETAILS = {
@@ -39,8 +40,13 @@ const EmergencyDashboard = () => {
   const GOOGLE_MAPS_API_KEY = process.env.REACT_APP_GOOGLE_MAPS_API_KEY || "KEY_HERE";
 
   const [jsonData, setJsonData] = useState(null);
+  const [audioLinks, setAudioLinks] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  // access agentTwoData passed via navigation state
+  const agentData = useLocation().state?.agentData;
+  console.log('Received agent data via navigation state:', agentData);
 
   useEffect(() => {
     const fetchLatestJsonFromApi = async () => {
@@ -61,8 +67,17 @@ const EmergencyDashboard = () => {
       }
     };
 
-    fetchLatestJsonFromApi();
-  }, []);
+    if (!agentData) {
+      console.log('No agent data found in navigation state, fetching from API...');
+      fetchLatestJsonFromApi();
+    } else {
+      console.log('Using agent data from navigation state:', agentData);
+      setJsonData(agentData.dispatch_data);
+      setAudioLinks(agentData.audio_files);
+      console.log("audio", agentData.audio_files);
+      setLoading(false);
+    }
+  }, [agentData]);
 
   // Function to geocode an address
   const geocodeAddress = (address) => {
