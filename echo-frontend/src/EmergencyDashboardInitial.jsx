@@ -25,6 +25,7 @@ const EmergencyDashboard = () => {
   const wsRef = useRef(null); // Keep a reference to the socket
 
   const [waitingForAgent1Response, setWaitingForAgent1Response] = useState(false);
+  const [waitingForAgentTwoResponse, setWaitingForAgentTwoResponse] = useState(false);
 
   const [location, setLocation] = useState(null);
   const [currentAddress, setCurrentAddress] = useState('6425 Boaz Lane, Dallas, TX 75205');
@@ -35,6 +36,7 @@ const EmergencyDashboard = () => {
   const GOOGLE_MAPS_API_KEY = process.env.REACT_APP_GOOGLE_MAPS_API_KEY || "KEY_HERE";
 
   const [jsonData, setJsonData] = useState(null);
+  const [agentTwoData, setAgentTwoData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -201,9 +203,36 @@ const EmergencyDashboard = () => {
           console.log("Found data:", result.data);
           setJsonData(result.data);
           setWaitingForAgent1Response(false); // Recommended: stop polling once found
+          setWaitingForAgentTwoResponse(true); // Start waiting for agent two response
         })
         .catch((err) => console.error("Polling error:", err));
   }, [waitingForAgent1Response]);
+
+  useEffect(() => {
+    if (!waitingForAgentTwoResponse)
+      return;
+    const folderName = `INC_result_transcript-${tStart.current !== "" ? tStart.current : new Date().toISOString()}`;
+    const queryParams = new URLSearchParams({ folderName });
+    fetch(`http://localhost:4000/api/poll-for-agentTwo-result?${queryParams}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        })
+        .then((res) => {
+          if (!res.ok) throw new Error('Network response was not ok');
+          return res.json(); // Must parse the stream to JSON
+        })
+        .then((result) => {
+          console.log("Found data:", result);
+          setAgentTwoData({
+            dispatch_data: result.dispatch_data,
+            audio_files: result.audio_files,
+          });
+          setWaitingForAgentTwoResponse(false); // Recommended: stop polling once found
+        })
+        .catch((err) => console.error("Polling error:", err));
+  }, [waitingForAgentTwoResponse]);
 
   // Function to geocode an address
   const geocodeAddress = (address) => {
@@ -356,8 +385,9 @@ const EmergencyDashboard = () => {
               Hello Rhythm, here are the details of your call.                    
             </span>
             <button
-              onClick={() => navigate('/app2')}
-              className="px-4 py-2 text-sm rounded-xl bg-white/20 text-white font-sans font-light hover:bg-white/30 backdrop-blur-md border border-white/30 transition ml-4"
+              onClick={() => navigate('/app2', { state: { agentData: agentTwoData } })}
+              className={`px-4 py-2 text-sm rounded-xl text-white font-sans font-light backdrop-blur-md border border-white/30 transition ml-4` + (agentTwoData ? ' bg-white/20 hover:bg-white/30' : ' bg-white/10 cursor-not-allowed')}
+              disabled={!agentTwoData}
             >
               Find Dispatcher
             </button>
