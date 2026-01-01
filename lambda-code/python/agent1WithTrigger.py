@@ -104,7 +104,7 @@ def extract_call_info(transcript: str, sentiment: str) -> dict:
         resp = bedrock_client.invoke_model(body=body, modelId="anthropic.claude-3-sonnet-20240229-v1:0")
         return json.loads(resp['body'].read())['content'][0]['text'].strip()
 
-    summary_prompt = f"Summarize this 911 call in one line (max 15 words): {transcript}"
+    summary_prompt = f"Summarize this 911 call in one line (max 15 words) such that it captures the essential emergency and location. \nHere is the transcript: {transcript}"
     info_prompt = (
         f"You are an emergency call analyst. Extract the top 3 key pieces of information "
         f"from the caller. Return ONLY the 3 points, separated by newlines. "
