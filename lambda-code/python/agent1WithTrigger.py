@@ -129,7 +129,7 @@ def lambda_handler(event, context):
     key = urllib.parse.unquote_plus(event['Records'][0]['s3']['object']['key'])
     filename = os.path.basename(key)
     
-    if key.startswith('emergency_agent_results/'):
+    if key.startswith(os.environ.get("S3_TARGET_FOLDER_NAME")):
         return {'status': 'skipped'}
 
     # 1. Download and Parse
@@ -167,7 +167,7 @@ def lambda_handler(event, context):
     }
 
     # 4. Save back to S3
-    result_key = f"emergency_agent_results/result_{filename}"
+    result_key = f"{os.environ.get("S3_TARGET_FOLDER_NAME")}result_{filename}"
     s3_client.put_object(
         Bucket=bucket,
         Key=result_key,

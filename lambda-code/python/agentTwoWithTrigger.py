@@ -586,7 +586,7 @@ def lambda_handler(event, context):
         json.dump(final_results, f, indent=2, default=str)
     
     # Upload everything
-    prefix = "agentTwoOutput"
+    prefix = os.environ.get("S3_TARGET_FOLDER_NAME")
     upload_folder_to_s3(incident_id_folder, prefix)
     
     print(f"\n✅ PIPELINE COMPLETE!")

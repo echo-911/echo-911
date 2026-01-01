@@ -313,7 +313,7 @@ const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 app.get('/api/poll-for-agent1-result', async (req, res) => {
   const { fileName } = req.query; // Expecting the name of the file to look for
   const BUCKET_NAME = 'transcripts-from-frontend';
-  const PREFIX = 'emergency_agent_results/';
+  const PREFIX = process.env.AGENT1_S3_TARGET_FOLDER;
   
   if (!fileName) {
     return res.status(400).json({ error: 'fileName query parameter is required' });
@@ -373,7 +373,7 @@ const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
 app.get('/api/poll-for-agentTwo-result', async (req, res) => {
   const { folderName } = req.query; // Expecting the name of the file to look for
   const BUCKET_NAME = 'transcripts-from-frontend';
-  const PREFIX = 'agentTwoOutput/' + folderName + '/';
+  const PREFIX = process.env.AGENTTWO_S3_TARGET_FOLDER + folderName + '/';
   
   if (!folderName) {
     return res.status(400).json({ error: 'folderName query parameter is required' });
