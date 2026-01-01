@@ -105,13 +105,18 @@ def extract_call_info(transcript: str, sentiment: str) -> dict:
         return json.loads(resp['body'].read())['content'][0]['text'].strip()
 
     summary_prompt = f"Summarize this 911 call in one line (max 15 words): {transcript}"
-    info_prompt = f"Extract the top 3 key pieces of information from this 911 transcript for responders: {transcript}"
+    info_prompt = (
+        f"You are an emergency call analyst. Extract the top 3 key pieces of information "
+        f"from the caller. Return ONLY the 3 points, separated by newlines. "
+        f"Do not use introductory text, bullet points, or numbering. "
+        f"Transcript: {transcript}"
+    )
 
     summary = invoke_bedrock(summary_prompt, 100).strip('"\'')
     additional = invoke_bedrock(info_prompt, 300)
     
     # Clean up bullets as done in local code
-    bullets = [line.strip(" -•") for line in additional.splitlines() if line.strip() and not line.lower().startswith("here")]
+    bullets = [line.strip("-• *") for line in additional.splitlines() if line.strip()]
 
     words = level_text.split()
     return {
@@ -119,7 +124,7 @@ def extract_call_info(transcript: str, sentiment: str) -> dict:
         "ThreatLevel": " ".join(words[:2]),
         "ThreatLevelDescription": " ".join(words[3:]),
         "Summary": summary,
-        "AdditionalInfo": bullets[:3]
+        "AdditionalInfo": bullets
     }
 
 # ---------------- Lambda Entry Point ----------------
