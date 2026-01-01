@@ -227,6 +227,7 @@ Requirements:
 - Describe hazards, life risk, and response status
 - Do NOT speculate
 - Do NOT include JSON or formatting
+- ONLY use information provided
 
 {context}
 """
