@@ -87,16 +87,22 @@ SEVERITY_LEVELS = {
 
 def extract_call_info(transcript: str, sentiment: str) -> dict:
     t_lower = transcript.lower()
-    if "mass casualty" in t_lower or "multiple people" in t_lower:
-        level_text = SEVERITY_LEVELS[5]
-    elif "critical" in t_lower or "immediately" in t_lower or "screaming" in t_lower:
-        level_text = SEVERITY_LEVELS[4]
-    elif "fire" in t_lower or "urgent" in t_lower:
-        level_text = SEVERITY_LEVELS[3]
-    elif "medium" in t_lower:
-        level_text = SEVERITY_LEVELS[2]
-    else:
-        level_text = SEVERITY_LEVELS[1]
+    # if "mass casualty" in t_lower or "multiple people" in t_lower:
+    #     level_text = SEVERITY_LEVELS[5]
+    # elif "critical" in t_lower or "immediately" in t_lower or "screaming" in t_lower:
+    #     level_text = SEVERITY_LEVELS[4]
+    # elif "fire" in t_lower or "urgent" in t_lower:
+    #     level_text = SEVERITY_LEVELS[3]
+    # elif "medium" in t_lower:
+    #     level_text = SEVERITY_LEVELS[2]
+    # else:
+    #     level_text = SEVERITY_LEVELS[1]
+    severity_prompt = (
+        f"You are a 911 dispatcher. Analyze the following transcript and assign a severity level based on these criteria:\n"
+        f"{json.dumps(SEVERITY_LEVELS, indent=2)}\n\n"
+        f"Transcript: {transcript}\n\n"
+        f"Reply with ONLY the integer (1-5) corresponding to the level. Do not output any other text."
+    )
 
     # Use the specific Bedrock prompts from local agent1.py
     def invoke_bedrock(p, tokens):
@@ -111,18 +117,26 @@ def extract_call_info(transcript: str, sentiment: str) -> dict:
         f"Do not use introductory text, bullet points, or numbering. "
         f"Transcript: {transcript}"
     )
-
+    try:
+        level_response = invoke_bedrock(severity_prompt, 10).strip()
+        # Filter digits: "Level 3" -> "3"
+        digits = ''.join(filter(str.isdigit, level_response))
+        level_id = int(digits)
+    except (ValueError, TypeError):
+        # Fallback if LLM returns garbage or empty string
+        level_id = 3  # Default to Medium Priority
+    level_text = SEVERITY_LEVELS[level_id]
+    threat_level, threat_desc = level_text.split(" - ", 1)
     summary = invoke_bedrock(summary_prompt, 100).strip('"\'')
     additional = invoke_bedrock(info_prompt, 300)
     
     # Clean up bullets as done in local code
     bullets = [line.strip("-• *") for line in additional.splitlines() if line.strip()]
 
-    words = level_text.split()
     return {
         "Sentiment": sentiment,
-        "ThreatLevel": " ".join(words[:2]),
-        "ThreatLevelDescription": " ".join(words[3:]),
+        "ThreatLevel": threat_level,
+        "ThreatLevelDescription": threat_desc,
         "Summary": summary,
         "AdditionalInfo": bullets
     }
