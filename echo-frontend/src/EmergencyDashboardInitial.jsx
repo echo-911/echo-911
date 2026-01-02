@@ -111,7 +111,7 @@ const EmergencyDashboard = () => {
     // fetchLatestTranscriptFromApi();
   
     console.log("webscok");
-    const ws = new WebSocket(process.env.REACT_WEBSOCKET_URL);
+    const ws = new WebSocket(process.env.REACT_APP_WEBSOCKET_URL);
     wsRef.current = ws;
     
     ws.onopen = () => {
